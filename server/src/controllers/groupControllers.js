@@ -1,5 +1,6 @@
 import Conversation from "../models/Conversation.js";
 
+//get all the geoup the user is in
 export const getUserGroups = async (req, res) => {
   const userId = req.user?.id || req.user?._id;
 
