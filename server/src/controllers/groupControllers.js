@@ -31,7 +31,7 @@ export const createGroup = async (req, res) => {
   const userId = req.user?.id || req.user?._id;
   const { name, participants = [], groupAvatar } = req.body;
 
-  if (!userId || !name) {
+  if (!userId || !name || participants.length <= 0) {
     return res
       .status(400)
       .json({ message: "Group name and user ID are required" });

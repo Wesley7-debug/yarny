@@ -9,6 +9,7 @@ import {
   sendWelcomeEmail,
 } from "../mailtrap/mailTrap.js";
 import crypto from "crypto";
+import { io } from "../../sockets/socket.js";
 
 export const SignUp = async (req, res) => {
   const { name, nickname, email, password } = req.body;
