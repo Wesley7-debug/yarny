@@ -8,6 +8,7 @@ import {
   exitGroup,
   generateGroupInviteLink,
   getUserGroups,
+  joinGroupByInviteLink,
   rejectGroupInvitation,
 } from "../controllers/groupControllers.js";
 

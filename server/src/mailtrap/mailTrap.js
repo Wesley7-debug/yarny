@@ -22,8 +22,8 @@ export const sendVerificationEmail = async (
   username,
   verificationToken
 ) => {
-  const verifyLink = `${process.env.BASE_URL}/api/auth/verify-email?token=${verificationToken}`; // Replace with actual frontend URL
-
+  // const verifyLink = `${process.env.BASE_URL}/api/auth/verify-email?token=${verificationToken}`; // Replace with actual frontend URL
+  const verifyLink = `${process.env.BASE_URL}/VerifySuccess?token=${verificationToken}`;
   try {
     const response = await client.send({
       from: sender,

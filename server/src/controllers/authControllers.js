@@ -54,21 +54,23 @@ export const SignUp = async (req, res) => {
 
 export const SignIn = async (req, res) => {
   const { email, password } = req.body;
-
+  console.log(req.body);
   if (!email || !password) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
   try {
     const existingUser = await User.findOne({ email });
+
     if (!existingUser) {
-      return res.status(401).json({ message: "Invalid email or not found" });
+      return res.status(401).json({ message: "email not found" });
     }
 
     const isValidPassword = await bcrypt.compare(
       password,
       existingUser.password
     );
+
     if (!isValidPassword) {
       return res.status(401).json({ message: "Invalid password" });
     }
@@ -129,10 +131,12 @@ export const verifyEmail = async (req, res) => {
   await user.save();
   await sendWelcomeEmail(user.email, user.name);
   res.status(200).json({ message: "Email verified successfully" });
+  res.redirect(`${process.env.BASE_URL}/VerifiedSuccess`);
 };
 
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
+  console.log("reset-email", email);
   if (!email) return res.status(400).json({ message: "Email is required" });
 
   const user = await User.findOne({ email });
@@ -143,7 +147,8 @@ export const forgotPassword = async (req, res) => {
   user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
   await user.save();
 
-  const resetLink = `${process.env.BASE_URL}/api/auth//reset-password?token=${resetToken}`;
+  // const resetLink = `${process.env.BASE_URL}/api/auth//reset-password?token=${resetToken}`;
+  const resetLink = `${process.env.BASE_URL}/ResetPassword?token=${resetToken}`;
   await sendResetPasswordEmail(user.email, resetLink, user.name);
 
   return res.status(200).json({ message: "Reset email sent" });
@@ -168,4 +173,17 @@ export const resetPassword = async (req, res) => {
   await sendPasswordResetConfirmationEmail(user.email, user.name);
 
   return res.status(200).json({ message: "Password reset successfully" });
+};
+
+export const checkNicknames = async (req, res) => {
+  const { nickname } = req.query;
+  if (!nickname) return res.json({ available: false });
+
+  try {
+    const exists = await User.findOne({ nickname });
+    res.json({ available: !exists });
+  } catch (error) {
+    console.error("Error checking nickname:", error);
+    res.status(500).json({ error: "Server error" });
+  }
 };
