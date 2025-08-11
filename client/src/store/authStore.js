@@ -18,13 +18,15 @@ const authStore = create((set) => ({
 
   CheckAuth: async () => {
     try {
-      const res = await fetch(`${CLIENT_URL}/api/auth`);
+      const res = await fetch(`${CLIENT_URL}/api/auth`, {
+        credentials: "include",
+      });
 
       if (res.ok) {
         const user = await res.json();
-        socket.on("connect", () => {
-          console.log("Connected to socket server");
-        });
+        // socket.on("connect", () => {
+        //   console.log("Connected to socket server");
+        // });
         set({ authUser: user, isAuthenticating: false });
       } else {
         set({ authUser: null, isAuthenticating: false });
@@ -67,6 +69,7 @@ const authStore = create((set) => ({
 
   signUp: async (name, email, password, bio, nickname) => {
     set({ isRegistering: true });
+
     try {
       const res = await fetch(`${CLIENT_URL}/api/auth/signup`, {
         method: "POST",
@@ -74,19 +77,25 @@ const authStore = create((set) => ({
         body: JSON.stringify({ name, email, password, bio, nickname }),
       });
 
-      if (res.ok) {
-        const user = await res.json();
-        set({ authUser: user, isRegistering: false });
-        toast.success("Registered successfully!");
-      } else {
-        throw new Error("Sign up failed");
+      if (!res.ok) {
+        const errorData = await res.json();
+        const errorMessage = errorData?.message || "Sign up failed";
+        throw new Error(errorMessage);
       }
+
+      const user = await res.json();
+      set({ authUser: user, isRegistering: false });
+      toast.success("Registered successfully!");
+
+      return { success: true };
     } catch (error) {
       console.error("Sign up error:", error);
       set({ isRegistering: false });
       toast.error(error.message || "Something went wrong while signing up.");
+      return { success: false, message: error.message };
     }
   },
+
   signOut: async () => {
     set({ isSigningOut: true });
     try {
@@ -138,16 +147,36 @@ const authStore = create((set) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password, token }),
       });
+
       if (res.ok) {
-        toast.success("Password reset  successfully,!");
+        toast.success("Password reset successfully!");
+        return true;
       } else {
-        throw new Error("Failed to reset password");
+        const data = await res.json();
+        toast.error(data.message || "Failed to reset password");
+        return false;
       }
     } catch (error) {
       console.error("Error during password reset:", error);
       toast.error("Something went wrong while resetting the password.");
+      return false;
     } finally {
-      set({ isCheckingEmail: false });
+      set({ isResetingPassword: false }); // 🛠 fix: you were setting isCheckingEmail
+    }
+  },
+
+  checkNickname: async (nickname) => {
+    try {
+      const res = await fetch(
+        `${
+          import.meta.env.VITE_BASE_URL
+        }/api/auth/check-nickname?nickname=${nickname}`
+      );
+      const data = await res.json();
+      return data.available;
+    } catch (err) {
+      console.error("Nickname check failed", err);
+      return null;
     }
   },
 }));

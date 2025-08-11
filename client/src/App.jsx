@@ -53,7 +53,7 @@ const App = () => {
           element={!authUser ? <SignUp /> : <Navigate to="/" />}
         />
         <Route path="/VerifyAccount" element={<VerifyAccount />} />
-        <Route path="/VerifiedSuccess" element={<VerifiedSuccess />} />
+        <Route path="/VerifiedSuccess/:token" element={<VerifiedSuccess />} />
         <Route path="/ForgotPassword" element={<ForgotPassword />} />
         <Route path="/ResetPassword/:token" element={<ResetPassword />} />
       </Routes>

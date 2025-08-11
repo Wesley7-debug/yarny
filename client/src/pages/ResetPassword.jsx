@@ -2,13 +2,16 @@ import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { toast } from "react-toastify";
-import { Loader } from "lucide-react";
+import { Loader, Eye, EyeOff } from "lucide-react";
 import authStore from "../store/authStore";
 
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const { resetPassword, isResetingPassword } = authStore();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const { resettPassword, isResetingPassword } = authStore();
   const navigate = useNavigate();
   const { token } = useParams();
 
@@ -25,11 +28,11 @@ const ResetPassword = () => {
       return;
     }
 
-    const success = await resetPassword(password, token);
-    if (success !== false) {
+    const success = await resettPassword(password, token);
+    if (success) {
       setTimeout(() => {
-        navigate("/login");
-      }, 2000); // Wait for toast to be seen
+        navigate("/Login", { replace: true });
+      }, 2000);
     }
   };
 
@@ -46,29 +49,50 @@ const ResetPassword = () => {
           Enter and confirm your new password.
         </p>
 
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="New password"
-          className="w-full px-4 py-3 mb-3 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 transition"
-        />
+        {/* Password Field */}
+        <div className="relative mb-3">
+          <input
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="New password"
+            className="w-full px-4 py-3 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 transition pr-12"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-purple-700 focus:outline-none"
+          >
+            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+        </div>
 
-        <input
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          placeholder="Confirm password"
-          className="w-full px-4 py-3 mb-4 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 transition"
-        />
+        {/* Confirm Password Field */}
+        <div className="relative mb-4">
+          <input
+            type={showConfirmPassword ? "text" : "password"}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Confirm password"
+            className="w-full px-4 py-3 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 transition pr-12"
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword((prev) => !prev)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-purple-700 focus:outline-none"
+          >
+            {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+        </div>
 
         <button
+          onClick={() => console.log("i have been clicked")}
           type="submit"
           disabled={isResetingPassword}
           className="w-full bg-purple-700 hover:bg-purple-800 text-white font-semibold py-3 rounded-md transition disabled:opacity-50"
         >
           {isResetingPassword ? (
-            <Loader className="animate-spin" />
+            <Loader className="animate-spin w-full text-center" />
           ) : (
             "Reset Password"
           )}

@@ -23,7 +23,7 @@ export const SignUp = async (req, res) => {
     //checks f0r existing emial and return an error if possible
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(402).json({ message: "User already exists" });
+      return res.status(402).json({ message: "User Email already exists" });
     }
     //hash the passwords
     const hashPassword = await bcrypt.hash(password, 10);
@@ -147,15 +147,15 @@ export const forgotPassword = async (req, res) => {
   user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
   await user.save();
 
-  // const resetLink = `${process.env.BASE_URL}/api/auth//reset-password?token=${resetToken}`;
-  const resetLink = `${process.env.BASE_URL}/ResetPassword?token=${resetToken}`;
-  await sendResetPasswordEmail(user.email, resetLink, user.name);
+  // const resetLink = `${process.env.BASE_URL}/ResetPassword/${resetToken}`;
+
+  await sendResetPasswordEmail(user.email, resetToken, user.name);
 
   return res.status(200).json({ message: "Reset email sent" });
 };
 
 export const resetPassword = async (req, res) => {
-  const { token, newPassword } = req.body;
+  const { token, password } = req.body;
 
   const user = await User.findOne({
     resetPasswordToken: token,
@@ -165,7 +165,14 @@ export const resetPassword = async (req, res) => {
   if (!user)
     return res.status(400).json({ message: "Invalid or expired token" });
 
-  user.password = await bcrypt.hash(newPassword, 10);
+  const isSamePassword = await bcrypt.compare(password, user.password);
+  if (isSamePassword) {
+    return res
+      .status(400)
+      .json({ message: "New password must be different from the old one" });
+  }
+
+  user.password = await bcrypt.hash(password, 10);
   user.resetPasswordToken = undefined;
   user.resetPasswordExpires = undefined;
   await user.save();
