@@ -1,3 +1,4 @@
+import { getReceiverSocketId, io } from "../../sockets/socket.js";
 import cloudinary from "../cloudinary/Cloudinary.js";
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
@@ -11,17 +12,17 @@ export const getorcreateMessage = async (req, res) => {
   }
 
   try {
-    // 1. Try to find existing conversation between two users (not a group)
+    // 1. Try to find existing conversation between two users
     let conversation = await Conversation.findOne({
       isGroup: false,
-      participants: { $all: [currentUserId, otherUserId], $size: 2 },
+      participants: { $all: [currentUserId, receiverId], $size: 2 },
     });
 
     // 2. If not found, create new conversation
     if (!conversation) {
       conversation = new Conversation({
         isGroup: false,
-        participants: [currentUserId, otherUserId],
+        participants: [currentUserId, receiverId],
       });
       await conversation.save();
     }
@@ -56,6 +57,14 @@ export const sendMessage = async (req, res) => {
       text,
       image: updatedUrl.secure_url || null,
     });
+    conversation.participants.forEach((participantId) => {
+      if (participantId.toString() !== senderId.toString()) {
+        const socketId = getReceiverSocketId(participantId.toString());
+        if (socketId) {
+          io.to(socketId).emit("newMessage", newMessage);
+        }
+      }
+    });
 
     await newMessage.save();
     return res.status(201).json(newMessage);
@@ -87,6 +96,10 @@ export const editMessage = async (req, res) => {
 
     message.text = text || message.text;
 
+    const receiverSocketId = getReceiverSocketId(message.conversationId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("messageEdited", message);
+    }
     await message.save();
 
     return res.status(200).json(message);

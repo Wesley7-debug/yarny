@@ -1,31 +1,93 @@
 import { Link } from "react-router-dom";
 
-import { LogOut, MessageSquare, Settings, User } from "lucide-react";
+import {
+  Camera,
+  Ellipsis,
+  EllipsisVertical,
+  LogOut,
+  MessageSquare,
+  Plus,
+  PlusCircle,
+  Settings,
+  User,
+} from "lucide-react";
 import authStore from "../../store/authStore";
+import Dropdown from "../ui/Dropdown";
 
 const Navbar = () => {
   const { logout, authUser } = authStore();
+  const dropdownOptions = [
+    {
+      label: (
+        <Link to="/newGroup" className="flex items-center gap-2 w-full">
+          <PlusCircle className="w-4 h-4" />
+          <span className="">New Group</span>
+        </Link>
+      ),
+    },
+    {
+      label: (
+        <Link to="/settings" className="flex items-center gap-2 w-full">
+          <Settings className="w-4 h-4" />
+          <span className="">Settings</span>
+        </Link>
+      ),
+    },
+    ...(authUser
+      ? [
+          {
+            label: (
+              <Link to="/profile" className="flex items-center gap-2 w-full">
+                <User className="w-4 h-4" />
+                <span className="">Profile</span>
+              </Link>
+            ),
+          },
+          {
+            label: (
+              <button
+                onClick={logout}
+                className="flex items-center gap-2 w-full text-left"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="">Logout</span>
+              </button>
+            ),
+          },
+        ]
+      : []),
+  ];
 
   return (
     <header
-      className="bg-base-100 border-b border-base-300 fixed w-full top-0 z-40 
+      className="bg-base-100  fixed w-full top-0 z-40 
     backdrop-blur-lg bg-base-100/80"
     >
-      <div className="container mx-auto px-4 h-16">
+      <div className="container mx-auto px-2 h-16">
         <div className="flex items-center justify-between h-full">
           <div className="flex items-center gap-8">
-            <Link
-              to="/"
-              className="flex items-center gap-2.5 hover:opacity-80 transition-all"
-            >
+            <Link className="flex items-center gap-2.5 hover:opacity-80 transition-all">
               <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center">
                 <MessageSquare className="w-5 h-5 text-primary" />
               </div>
               <h1 className="text-lg font-bold">Yarny</h1>
             </Link>
           </div>
+          <div className="flex items-center gap-3">
+            {/* <div>
+              <Camera className="w-5 h-5 cursor-pointer" />
+            </div> */}
+            <Dropdown
+              trigger={
+                <div className="p-2 rounded-full hover:bg-white/10 transition cursor-pointer">
+                  <EllipsisVertical className="w-5 h-5 " />
+                </div>
+              }
+              options={dropdownOptions}
+            />
+          </div>
 
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             <Link
               to={"/settings"}
               className={`
@@ -50,7 +112,7 @@ const Navbar = () => {
                 </button>
               </>
             )}
-          </div>
+          </div> */}
         </div>
       </div>
     </header>

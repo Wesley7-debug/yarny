@@ -1,46 +1,46 @@
 import React, { useCallback, useState } from "react";
-import { Link } from "react-router-dom";
 import debounce from "../utils/debounce";
 import authStore from "../store/authStore";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
-  const [emailStatus, setEmailStatus] = useState(null); // null | 'valid' | 'invalid'
+  const [status, setStatus] = useState(null); // null | 'success' | 'error'
+  const [resetToken, setResetToken] = useState(null);
   const { sendEmailToPassword, isCheckingEmail } = authStore();
 
   const debouncedSendEmail = useCallback(
     debounce(async (emailValue) => {
       const result = await sendEmailToPassword(emailValue);
-      if (result.status === "success") {
-        setEmailStatus("valid");
+      if (result.status === "success" && result.token) {
+        setResetToken(result.token);
+        setStatus("success");
       } else {
-        setEmailStatus("invalid");
+        setStatus("error");
       }
     }, 800),
     [authStore]
   );
+
   const handleSendReset = () => {
     if (!email.includes("@")) {
-      setEmailStatus("invalid");
+      setStatus("error");
       return;
     }
 
-    setEmailStatus(null); // reset before trying
+    setStatus(null);
     debouncedSendEmail(email);
   };
 
-  const handleGoToMail = () => {
-    window.open("https://mail.google.com", "_blank");
-  };
+  const baseUrl = "http://localhost:5173";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white to-purple-100 px-4">
       <div className="bg-white shadow-xl rounded-xl p-8 sm:p-10 max-w-md w-full border border-purple-300">
         <h1 className="text-3xl font-bold text-purple-700 mb-4 text-center">
-          Forgot Password
+          Reset Password
         </h1>
         <p className="text-sm text-gray-600 mb-6 text-center">
-          Enter your email to receive a password reset link.
+          Enter your email to generate a password reset link.
         </p>
 
         <input
@@ -60,30 +60,28 @@ const ForgotPassword = () => {
               : "bg-purple-600 text-white hover:bg-purple-700"
           }`}
         >
-          {isCheckingEmail ? "Sending..." : "Send Reset Link"}
+          {isCheckingEmail ? "Generating..." : "Generate Reset Link"}
         </button>
 
-        {emailStatus === "valid" && !isCheckingEmail && (
+        {status === "success" && resetToken && (
           <div className="text-center mt-4">
             <p className="text-green-600 text-sm mb-2">
-              Reset link sent to your email.
+              Your password reset link:
             </p>
-            <button
-              onClick={handleGoToMail}
-              className="mt-2 inline-block bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition"
+            <a
+              href={`${baseUrl}/ResetPassword/${resetToken}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="break-words inline-block bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition"
             >
-              Go to Mail
-            </button>
+              this
+            </a>
           </div>
         )}
 
-        {emailStatus === "invalid" && !isCheckingEmail && (
+        {status === "error" && !isCheckingEmail && (
           <p className="text-red-600 text-sm text-center mt-4">
-            Email not found.{" "}
-            <Link to="/register" className="text-purple-700 underline">
-              Register here
-            </Link>
-            .
+            Couldn't generate reset link. Please check your email or try again.
           </p>
         )}
       </div>

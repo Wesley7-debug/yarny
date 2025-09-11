@@ -1,13 +1,10 @@
 import { create } from "zustand";
 import { io } from "socket.io-client";
 import { toast } from "react-toastify";
-import { Navigate } from "react-router-dom";
 
-const CLIENT_URL = "http://localhost:5000";
+const CLIENT_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 
-const socket = io(CLIENT_URL);
-
-const authStore = create((set) => ({
+const authStore = create((set, get) => ({
   authUser: null,
   isRegistering: false,
   isSigningIn: false,
@@ -15,6 +12,7 @@ const authStore = create((set) => ({
   isAuthenticating: true,
   isCheckingEmail: false,
   isResetingPassword: false,
+  socket: null,
 
   CheckAuth: async () => {
     try {
@@ -24,9 +22,7 @@ const authStore = create((set) => ({
 
       if (res.ok) {
         const user = await res.json();
-        // socket.on("connect", () => {
-        //   console.log("Connected to socket server");
-        // });
+        get().connectSocket();
         set({ authUser: user, isAuthenticating: false });
       } else {
         set({ authUser: null, isAuthenticating: false });
@@ -50,9 +46,7 @@ const authStore = create((set) => ({
       if (res.ok) {
         const { user, message } = await res.json();
 
-        socket.on("connect", () => {
-          console.log("Connected to socket server");
-        });
+        get().connectSocket();
 
         set({ authUser: user, isSigningIn: false });
         toast.success(message || "Signed in successfully!");
@@ -86,7 +80,7 @@ const authStore = create((set) => ({
       const user = await res.json();
       set({ authUser: user, isRegistering: false });
       toast.success("Registered successfully!");
-
+      get().connectSocket();
       return { success: true };
     } catch (error) {
       console.error("Sign up error:", error);
@@ -106,7 +100,7 @@ const authStore = create((set) => ({
 
       if (res.ok) {
         set({ authUser: null, isSigningOut: false });
-        socket.disconnect();
+        get().disconnectSocket();
       } else {
         throw new Error("Sign out failed");
       }
@@ -127,18 +121,29 @@ const authStore = create((set) => ({
 
       const data = await res.json();
 
-      if (res.ok && data?.message === "Reset email sent") {
-        toast.success("Password reset email sent successfully!");
+      if (res.ok && data?.token) {
+        toast.success("Reset token generated successfully!");
+        return {
+          status: "success",
+          token: data.token,
+        };
       } else {
-        toast.error(data?.message || "Failed to send reset email.");
+        toast.error(data?.message || "Failed to generate reset token.");
+        return {
+          status: "error",
+        };
       }
     } catch (error) {
       console.error("Error during password reset:", error);
-      toast.error("Something went wrong while resetting the password.");
+      toast.error("Something went wrong while generating the reset token.");
+      return {
+        status: "error",
+      };
     } finally {
       set({ isCheckingEmail: false });
     }
   },
+
   resettPassword: async (password, token) => {
     set({ isResetingPassword: true });
     try {
@@ -177,6 +182,25 @@ const authStore = create((set) => ({
     } catch (err) {
       console.error("Nickname check failed", err);
       return null;
+    }
+  },
+  connectSocket: () => {
+    const socket = io(CLIENT_URL, {
+      withCredentials: true,
+    });
+
+    socket.on("connect", () => {
+      console.log("Connected to socket server");
+    });
+
+    set({ socket: socket });
+  },
+  disconnectSocket: () => {
+    const { socket } = get();
+    if (socket) {
+      socket.disconnect();
+      set({ socket: null });
+      console.log("Disconnected from socket server");
     }
   },
 }));

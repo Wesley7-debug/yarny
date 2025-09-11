@@ -137,7 +137,7 @@ export default function SignUp() {
     );
 
     if (result.success) {
-      navigate("/VerifyAccount");
+      navigate("/");
     } else {
       if (result.message.includes("email")) {
         setErrors((prev) => ({ ...prev, email: "Email already exists" }));

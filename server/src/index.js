@@ -8,11 +8,12 @@ import ConnectDb from "../Db/ConnectDb.js";
 import { app, server } from "../sockets/socket.js";
 import cors from "cors";
 import express from "express";
-
+import cookieParser from "cookie-parser";
 config();
 
 app.use(express.json());
 
+app.use(cookieParser());
 app.use(
   cors({
     origin: process.env.BASE_URL,

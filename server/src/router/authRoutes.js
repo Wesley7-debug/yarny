@@ -7,7 +7,6 @@ import {
   resetPassword,
   SignIn,
   SignUp,
-  verifyEmail,
 } from "../controllers/authControllers.js";
 
 const router = express.Router();
@@ -17,7 +16,6 @@ router.get("/", Checkauth);
 router.post("/signup", SignUp);
 router.post("/signin", SignIn);
 router.post("/logout", Logout);
-router.get("/verify-email", verifyEmail);
 router.post("/forgot-password", forgotPassword);
 router.put("/reset-password", resetPassword);
 router.get("/check-nickname", checkNicknames);

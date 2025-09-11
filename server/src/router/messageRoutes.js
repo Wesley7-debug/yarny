@@ -9,8 +9,8 @@ import {
 
 const router = express.Router();
 
-router.get("/", requireAuth, getorcreateMessage);
+router.post("/:id", requireAuth, getorcreateMessage);
 router.post("/send/:id", requireAuth, sendMessage);
-router.put("/edit/:id", requireAuth, editMessage);
+router.put("/edit/:id/", requireAuth, editMessage);
 router.delete("/delete/:id", requireAuth, deleteMessage);
 export default router;
