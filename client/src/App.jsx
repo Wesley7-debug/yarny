@@ -8,8 +8,8 @@ import Navbar from "./components/reuseable/Navbar";
 import SignUp from "./pages/SignUp";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
+
+import FriendsProfile from "./pages/FriendsProfile";
 
 const App = () => {
   const { authUser, isAuthenticating, CheckAuth } = authStore();
@@ -49,8 +49,10 @@ const App = () => {
           path="/SignUp"
           element={!authUser ? <SignUp /> : <Navigate to="/" />}
         />
-        <Route path="/ForgotPassword" element={<ForgotPassword />} />
-        <Route path="/ResetPassword/:token" element={<ResetPassword />} />
+        <Route
+          path="/friendsProfile/:id"
+          element={authUser ? <FriendsProfile /> : <Navigate to="/Login" />}
+        />
       </Routes>
     </div>
   );

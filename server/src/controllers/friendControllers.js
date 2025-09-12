@@ -149,3 +149,22 @@ export const RemoveFriendRequest = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const getFriendsProfile = async (req, res) => {
+  const { id: FriendId } = req.params;
+  if (!FriendId) {
+    return res.status(400).json({ message: "Friend ID is required" });
+  }
+
+  try {
+    const friend = await User.findById(FriendId).select("-password");
+    if (!friend) {
+      return res.status(404).json({ message: "Friend not found" });
+    }
+
+    return res.status(200).json({ friend });
+  } catch (error) {
+    console.error("Error fetching friend's profile:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};

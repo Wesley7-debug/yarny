@@ -4,6 +4,9 @@ import Sidebar from "../components/reuseable/Sidebar";
 import MessageContainer from "../components/reuseable/MessageContainer";
 import NoChatSelected from "../components/reuseable/NoChatSelected";
 import useIsMobile from "../utils/useIsMobile";
+import StatusTab from "../components/reuseable/StatusTab";
+import FriendsTab from "../components/reuseable/FriendsTab";
+import CallTab from "../components/reuseable/CallTab";
 
 export default function Home() {
   const [selectedUser, setSelectedUser] = useState(null);
@@ -83,19 +86,13 @@ export default function Home() {
         }
 
       case "status":
-        return (
-          <div className="w-full text-center">Status Page (Coming soon)</div>
-        );
+        return <StatusTab />;
 
       case "friends":
-        return (
-          <div className="w-full text-center">Friends List (Coming soon)</div>
-        );
+        return <FriendsTab />;
 
       case "calls":
-        return (
-          <div className="w-full text-center">Calls History (Coming soon)</div>
-        );
+        return <CallTab />;
 
       default:
         return null;
@@ -107,7 +104,7 @@ export default function Home() {
       <ChatActionBar activeTab={activeTab} onTabChange={setActiveTab} />
       <div className="flex items-center justify-center pt-20">
         <div className="bg-base-100 rounded-lg shadow-cl w-full h-[calc(100vh-8rem)]">
-          <div className="flex h-full rounded-lg overflow-hidden lg:ml-13">
+          <div className="flex h-full rounded-lg lg:ml-13">
             {renderContent()}
           </div>
         </div>

@@ -4,6 +4,7 @@ import {
   addFriend,
   getFriendRequests,
   getFriendsAllUser,
+  getFriendsProfile,
   removeFriend,
   RemoveFriendRequest,
 } from "../controllers/friendControllers.js";
@@ -19,5 +20,7 @@ router.post("/add-friend/:id", requireAuth, addFriend);
 router.get("/requests/:id", requireAuth, getFriendRequests);
 //reject friend request
 router.post("/reject-request/:id", requireAuth, RemoveFriendRequest);
+//get friend profile
+router.get("/friend-profile/:id", requireAuth, getFriendsProfile);
 
 export default router;

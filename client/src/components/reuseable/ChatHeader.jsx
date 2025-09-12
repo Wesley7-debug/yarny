@@ -53,19 +53,21 @@ const ChatHeader = ({ selectedUser, onlineUsers, setSelectedUser }) => {
           <button
             onClick={() => setSelectedUser(null)}
             aria-label="Close chat"
-            className="ml-2  lg:hidden"
+            className="ml-2  "
           >
             <ArrowLeft className="w-5 h-5 " strokeWidth={4} />
           </button>
           {/* Avatar */}
-          <div className="avatar rounded-full">
+          <Link
+            to={`/friendsProfile/${selectedUser._id}`}
+            className="avatar rounded-full"
+          >
             <img
               src={selectedUser.profilePic}
               alt="User Avatar"
               className="size-10 rounded-full object-cover"
             />
-          </div>
-
+          </Link>
           {/* User Info */}
           <div>
             <h3 className="font-medium">{selectedUser.fullName}</h3>
