@@ -1,8 +1,17 @@
 import { Users } from "lucide-react";
 import SearchInput from "./SearchInput";
 import Cards from "./Cards";
+import friendsStore from "../../store/friendsStore";
+import messageStore from "../../store/messageStore";
 
-const Sidebar = ({ users, selectedUser, setSelectedUser }) => {
+const Sidebar = () => {
+  const { friends, isGettingFriend } = friendsStore();
+  const { selectedUser, setSelectedUser } = messageStore();
+
+  if (isGettingFriend) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <aside className="h-full w-full lg:w-72 border-r border-base-300 flex flex-col transition-all duration-200">
       <div className="w-full text-start ">
@@ -14,10 +23,12 @@ const Sidebar = ({ users, selectedUser, setSelectedUser }) => {
       <Cards />
 
       <div className="overflow-y-auto w-full py-3">
-        {users.map((user) => (
+        {friends.map((user) => (
           <button
             key={user._id}
-            onClick={() => setSelectedUser(user)}
+            onClick={() =>
+              setSelectedUser(user._id === selectedUser?._id ? null : user)
+            }
             className={`w-full p-3 flex items-center justify-between gap-3 hover:bg-base-300 transition-colors cursor-pointer ${
               selectedUser?._id === user._id ? "bg-gray-200" : ""
             }`}
@@ -26,7 +37,7 @@ const Sidebar = ({ users, selectedUser, setSelectedUser }) => {
               {/* Avatar with online badge */}
               <div className="relative flex-shrink-0">
                 <img
-                  src={user.profilePic || "/avatar.png"}
+                  src={user.profilePic || "/images/avatar.png"}
                   alt={user.fullName}
                   className="size-12 object-cover rounded-full"
                 />
@@ -50,7 +61,7 @@ const Sidebar = ({ users, selectedUser, setSelectedUser }) => {
           </button>
         ))}
 
-        {users.length === 0 && (
+        {friends.length === 0 && (
           <div className="text-center text-zinc-500 py-4">No online users</div>
         )}
       </div>

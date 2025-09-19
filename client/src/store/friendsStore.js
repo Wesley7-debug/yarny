@@ -5,10 +5,12 @@ const CLIENT_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 
 const friendsStore = create((set) => ({
   friends: [],
+  friendInfo: [],
   isGettingUsersFriends: false,
   isGettingUsersFriendRequest: false,
   isAcceptingFriendRequest: false,
   isRejectingFriendRequest: false,
+  isGettingFriendInfo: false,
   isRemovingUserFriend: false,
 
   getAllUserFriends: async () => {
@@ -27,6 +29,24 @@ const friendsStore = create((set) => ({
       console.error("Error fetching friends:", error);
     } finally {
       set({ isGettingUsersFriends: false });
+    }
+  },
+  getFriendsInfo: async (id) => {
+    set({ isGettingFriendInfo: true });
+    try {
+      const res = await fetch(`${CLIENT_URL}/api/friends-info/${id}`, {
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        set({ friendInfo: data });
+      } else {
+        throw new Error("Failed to fetch friend info");
+      }
+    } catch (error) {
+      console.error("Error fetching friend info:", error);
+    } finally {
+      set({ isGettingFriendInfo: false });
     }
   },
   getUserFriendRequest: async (id) => {

@@ -10,6 +10,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import FriendsProfile from "./pages/FriendsProfile";
+import CompleteSignup from "./pages/CompleteSignup";
 
 const App = () => {
   const { authUser, isAuthenticating, CheckAuth } = authStore();
@@ -46,11 +47,15 @@ const App = () => {
           element={!authUser ? <Login /> : <Navigate to="/" />}
         />
         <Route
-          path="/SignUp"
-          element={!authUser ? <SignUp /> : <Navigate to="/" />}
+          path="/completeSignup"
+          element={authUser ? <CompleteSignup /> : <Navigate to="/" />}
         />
         <Route
-          path="/friendsProfile/:id"
+          path="/SignUp"
+          element={authUser ? <SignUp /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/friendsProfile"
           element={authUser ? <FriendsProfile /> : <Navigate to="/Login" />}
         />
       </Routes>
