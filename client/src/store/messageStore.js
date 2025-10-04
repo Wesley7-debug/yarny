@@ -11,11 +11,16 @@ const messageStore = create((set, get) => ({
     set({ isGettingConversation: true });
 
     try {
-      const response = await fetch(`${CLIENT_URL}/messages/${Id}`, {
-        method: "POST",
+      const response = await fetch(`${CLIENT_URL}/api/messages/${Id}`, {
+        method: "GET",
         credentials: "include",
       });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Error ${response.status}: ${text}`);
+      }
       const data = await response.json();
+
       set({ messages: data });
     } catch (error) {
       console.error("Failed to fetch messages:", error);
@@ -23,17 +28,18 @@ const messageStore = create((set, get) => ({
       set({ isGettingConversation: false });
     }
   },
-  sendMessage: async (message) => {
+
+  sendMessage: async ({ text, image }) => {
     const { selectedUser } = get();
     try {
       const response = await fetch(
-        `${CLIENT_URL}/messages/${selectedUser._id}`,
+        `${CLIENT_URL}/api/messages/send${selectedUser._id}`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ message }),
+          body: JSON.stringify({ text, image }),
           credentials: "include",
         }
       );
@@ -48,7 +54,7 @@ const messageStore = create((set, get) => ({
   editMessage: async (Id, messageId, newMessage) => {
     try {
       const response = await fetch(
-        `${CLIENT_URL}/messages/${Id}/${messageId}`,
+        `${CLIENT_URL}/api/messages/edit${messageId}`,
         {
           method: "PUT",
           headers: {
@@ -70,7 +76,7 @@ const messageStore = create((set, get) => ({
   },
   deleteMessage: async (Id, messageId) => {
     try {
-      await fetch(`${CLIENT_URL}/messages/${Id}/${messageId}`, {
+      await fetch(`${CLIENT_URL}/api/messages/delete${messageId}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -103,7 +109,10 @@ const messageStore = create((set, get) => ({
     socket.off("newMessage");
   },
 
-  setSelectedUser: (selectedUser) => set({ selectedUser }),
+  setSelectedUser: (selectedUser) => {
+    console.log("Setting selectedUser:", selectedUser);
+    set({ selectedUser });
+  },
 }));
 
 export default messageStore;

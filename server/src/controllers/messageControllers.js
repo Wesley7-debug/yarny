@@ -3,7 +3,8 @@ import cloudinary from "../cloudinary/Cloudinary.js";
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 
-export const getorcreateMessage = async (req, res) => {
+// GET /api/conversations/:id/messages
+export const getOrCreateConversationWithMessages = async (req, res) => {
   const currentUserId = req.user.id || req.user._id;
   const { id: receiverId } = req.params;
 
@@ -12,13 +13,11 @@ export const getorcreateMessage = async (req, res) => {
   }
 
   try {
-    // 1. Try to find existing conversation between two users
     let conversation = await Conversation.findOne({
       isGroup: false,
       participants: { $all: [currentUserId, receiverId], $size: 2 },
     });
 
-    // 2. If not found, create new conversation
     if (!conversation) {
       conversation = new Conversation({
         isGroup: false,
@@ -27,9 +26,13 @@ export const getorcreateMessage = async (req, res) => {
       await conversation.save();
     }
 
-    return res.status(200).json(conversation);
+    const messages = await Message.find({ conversationId: conversation._id })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    return res.status(200).json(messages);
   } catch (error) {
-    console.error("Error finding or creating conversation:", error);
+    console.error("Error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };

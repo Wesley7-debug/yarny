@@ -11,9 +11,12 @@ import "react-toastify/dist/ReactToastify.css";
 
 import FriendsProfile from "./pages/FriendsProfile";
 import CompleteSignup from "./pages/CompleteSignup";
+import messageStore from "./store/messageStore";
 
 const App = () => {
   const { authUser, isAuthenticating, CheckAuth } = authStore();
+  const selectedUser = messageStore((state) => state.selectedUser);
+
   const location = useLocation();
 
   useEffect(() => {
@@ -27,15 +30,18 @@ const App = () => {
       </div>
     );
   }
+  console.log("selectedUser", selectedUser);
+  console.log("pathname", location.pathname);
 
   const showNavbarOn = ["/", "/settings"];
-  const showNavbar = authUser && showNavbarOn.includes(location.pathname);
+  const showNavbar =
+    authUser && showNavbarOn.includes(location.pathname) && !selectedUser;
 
   return (
     <div>
       {showNavbar && <Navbar />}
 
-      <ToastContainer position="bottom-right" autoClose={3000} />
+      <ToastContainer position="top-right" autoClose={3000} max={3} />
 
       <Routes>
         <Route
@@ -52,7 +58,7 @@ const App = () => {
         />
         <Route
           path="/SignUp"
-          element={authUser ? <SignUp /> : <Navigate to="/" />}
+          element={!authUser ? <SignUp /> : <Navigate to="/" />}
         />
         <Route
           path="/friendsProfile"

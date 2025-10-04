@@ -13,8 +13,10 @@ import {
 } from "lucide-react";
 import Dropdown from "../ui/Dropdown";
 import { Link } from "react-router-dom";
+import messageStore from "../../store/messageStore";
 
-const ChatHeader = ({ selectedUser, onlineUsers, setSelectedUser }) => {
+const ChatHeader = () => {
+  const { selectedUser, setSelectedUser } = messageStore();
   if (!selectedUser) return null; // 👈 Prevent rendering when user is not selected
 
   const chatHeaderDropdownOptions = [
@@ -63,16 +65,16 @@ const ChatHeader = ({ selectedUser, onlineUsers, setSelectedUser }) => {
             className="avatar rounded-full"
           >
             <img
-              src={selectedUser.profilePic}
+              src={selectedUser.avatarUrl || "/Images/avatar.png"}
               alt="User Avatar"
               className="size-10 rounded-full object-cover"
             />
           </Link>
           {/* User Info */}
           <div>
-            <h3 className="font-medium">{selectedUser.fullName}</h3>
+            <h3 className="font-medium">{selectedUser.nickname}</h3>
             <p className="text-sm text-base-content/70">
-              {onlineUsers.includes(selectedUser._id) ? "Online" : "Offline"}
+              {/* {onlineUsersId.includes(selectedUser._id) ? "Online" : "Offline"} */}
             </p>
           </div>
         </div>

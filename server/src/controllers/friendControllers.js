@@ -1,19 +1,22 @@
 import User from "../models/User.js";
-
 export const getFriendsAllUser = async (req, res) => {
-  const loggedInUser = req.user.id || req.user._id;
+  const loggedInUser = req.user?.id || req.user?._id;
+
+  if (!loggedInUser) {
+    return res
+      .status(401)
+      .json({ message: "Unauthorized: No user in request" });
+  }
 
   try {
-    // Find the logged-in user
     const user = await User.findById(loggedInUser)
       .populate("friends")
-      .select(-loggedInUser);
+      .select("-password");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Return populated friends list
     return res.status(200).json({ friends: user.friends });
   } catch (error) {
     console.error("Error fetching friends:", error);

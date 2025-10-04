@@ -1,3 +1,117 @@
+// import { Server } from "socket.io";
+// import http from "http";
+// import express from "express";
+
+// const app = express();
+// const server = http.createServer(app);
+
+// const io = new Server(server, {
+//   cors: {
+//     origin: ["http://localhost:5173"],
+//     credentials: true,
+//   },
+// });
+
+// // Store multiple socket IDs per user
+// const userSocketMap = {}; // { userId: [socketId1, socketId2, ...] }
+// const onlineUsers = new Set(); // Track online users explicitly
+// const disconnectTimeouts = {}; // Delayed offline timers per user
+
+// export function getReceiverSocketId(userId) {
+//   return userSocketMap[userId]?.[0];
+// }
+
+// io.on("connection", (socket) => {
+//   console.log("A user connected", socket.id);
+
+//   const userId = socket.handshake.query.userId;
+
+//   if (userId) {
+//     // Add socket ID to user
+//     if (!userSocketMap[userId]) {
+//       userSocketMap[userId] = [];
+//     }
+//     userSocketMap[userId].push(socket.id);
+
+//     // User is online: cancel any pending offline timeout
+//     if (disconnectTimeouts[userId]) {
+//       clearTimeout(disconnectTimeouts[userId]);
+//       delete disconnectTimeouts[userId];
+//     }
+
+//     onlineUsers.add(userId);
+
+//     // Broadcast updated online users list
+//     io.emit("getOnlineUsers", Array.from(onlineUsers));
+//   }
+
+//   // Join conversation rooms
+//   socket.on("joinConversation", (conversationId) => {
+//     socket.join(conversationId);
+//   });
+
+//   // Typing indicators
+//   socket.on("typing", ({ conversationId, userId }) => {
+//     socket.to(conversationId).emit("userTyping", { conversationId, userId });
+//   });
+
+//   socket.on("stopTyping", ({ conversationId, userId }) => {
+//     socket
+//       .to(conversationId)
+//       .emit("userStoppedTyping", { conversationId, userId });
+//   });
+
+//   // Explicit logout event from client
+//   socket.on("logout", () => {
+//     if (userId) {
+//       console.log(`User ${userId} logged out`);
+//       // Remove all sockets for this user
+//       if (userSocketMap[userId]) {
+//         userSocketMap[userId].forEach((sid) => {
+//           const s = io.sockets.sockets.get(sid);
+//           if (s) {
+//             s.disconnect(true); // disconnect all sockets forcibly
+//           }
+//         });
+//       }
+//       delete userSocketMap[userId];
+//       onlineUsers.delete(userId);
+
+//       // Clear any disconnect timeouts
+//       if (disconnectTimeouts[userId]) {
+//         clearTimeout(disconnectTimeouts[userId]);
+//         delete disconnectTimeouts[userId];
+//       }
+
+//       io.emit("getOnlineUsers", Array.from(onlineUsers));
+//     }
+//   });
+
+//   socket.on("disconnect", () => {
+//     console.log("A user disconnected", socket.id);
+
+//     if (userId && userSocketMap[userId]) {
+//       // Remove this socket id from user's list
+//       userSocketMap[userId] = userSocketMap[userId].filter(
+//         (id) => id !== socket.id
+//       );
+
+//       if (userSocketMap[userId].length === 0) {
+//         // Delay marking user offline by 10 seconds (for refresh/reconnect)
+//         disconnectTimeouts[userId] = setTimeout(() => {
+//           delete userSocketMap[userId];
+//           onlineUsers.delete(userId);
+//           io.emit("getOnlineUsers", Array.from(onlineUsers));
+//           delete disconnectTimeouts[userId];
+//           console.log(`User ${userId} marked offline after timeout`);
+//         }, 10000); // 10 seconds timeout
+//       }
+//     }
+//   });
+// });
+
+// export { io, app, server };
+
 import { Server } from "socket.io";
 import http from "http";
 import express from "express";
@@ -8,46 +122,112 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: ["http://localhost:5173"],
+    credentials: true,
   },
 });
 
+const userSocketMap = {}; // { userId: [socketId1, socketId2, ...] }
+const onlineUsers = new Set(); // set of online userIds
+const disconnectTimers = {}; // { userId: Timeout }
+
 export function getReceiverSocketId(userId) {
-  return userSocketMap[userId];
+  return userSocketMap[userId]?.[0];
 }
 
-// used to store online users
-const userSocketMap = {}; // {userId: socketId}
-
 io.on("connection", (socket) => {
-  console.log("A user connected", socket.id);
+  const userId = socket.handshake.query.userId;
 
-  // Join user to their rooms (1-1 or group conversations)
+  if (!userId) {
+    console.warn("❌ No userId in socket handshake query");
+    return;
+  }
+
+  console.log(`✅ User connected: ${userId} (${socket.id})`);
+
+  // ✅ Cancel any pending disconnect timeout
+  if (disconnectTimers[userId]) {
+    clearTimeout(disconnectTimers[userId]);
+    delete disconnectTimers[userId];
+    console.log(
+      `⏹️ Reconnected - cancel disconnect timeout for user ${userId}`
+    );
+  }
+
+  // ✅ Add socket to user's socket list
+  if (!userSocketMap[userId]) {
+    userSocketMap[userId] = [];
+  }
+  userSocketMap[userId].push(socket.id);
+
+  // ✅ Mark user online
+  onlineUsers.add(userId);
+
+  // ✅ Broadcast online users list
+  io.emit("getOnlineUsers", Array.from(onlineUsers));
+
+  // ✅ Join conversation room
   socket.on("joinConversation", (conversationId) => {
     socket.join(conversationId);
   });
 
-  // Handle typing start
+  // ✅ Typing events
   socket.on("typing", ({ conversationId, userId }) => {
     socket.to(conversationId).emit("userTyping", { conversationId, userId });
   });
 
-  // Handle typing stop
   socket.on("stopTyping", ({ conversationId, userId }) => {
     socket
       .to(conversationId)
       .emit("userStoppedTyping", { conversationId, userId });
   });
 
-  const userId = socket.handshake.query.userId;
-  if (userId) userSocketMap[userId] = socket.id;
+  // ✅ Handle logout
+  socket.on("logout", () => {
+    console.log(`🔌 User ${userId} logged out`);
 
-  // io.emit() is used to send events to all the connected clients
-  io.emit("getOnlineUsers", Object.keys(userSocketMap));
+    // Disconnect all sockets for this user
+    if (userSocketMap[userId]) {
+      userSocketMap[userId].forEach((socketId) => {
+        const s = io.sockets.sockets.get(socketId);
+        if (s) s.disconnect(true);
+      });
+      delete userSocketMap[userId];
+    }
 
+    onlineUsers.delete(userId);
+
+    if (disconnectTimers[userId]) {
+      clearTimeout(disconnectTimers[userId]);
+      delete disconnectTimers[userId];
+    }
+
+    io.emit("getOnlineUsers", Array.from(onlineUsers));
+  });
+
+  // ✅ Handle disconnect
   socket.on("disconnect", () => {
-    console.log("A user disconnected", socket.id);
-    delete userSocketMap[userId];
-    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+    console.log(`❌ Socket disconnected: ${socket.id} for user ${userId}`);
+
+    if (userSocketMap[userId]) {
+      // Remove the disconnected socket
+      userSocketMap[userId] = userSocketMap[userId].filter(
+        (id) => id !== socket.id
+      );
+
+      // If user has no remaining sockets, start timeout
+      if (userSocketMap[userId].length === 0) {
+        console.log(`⏳ Starting disconnect timeout for user ${userId}`);
+        disconnectTimers[userId] = setTimeout(() => {
+          console.log(`⚠️ User ${userId} timed out - marking offline`);
+
+          delete userSocketMap[userId];
+          onlineUsers.delete(userId);
+          delete disconnectTimers[userId];
+
+          io.emit("getOnlineUsers", Array.from(onlineUsers));
+        }, 10000); // 10 seconds
+      }
+    }
   });
 });
 

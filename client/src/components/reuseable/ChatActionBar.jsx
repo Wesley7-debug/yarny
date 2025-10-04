@@ -1,5 +1,6 @@
 import {
   CirclePlayIcon,
+  HomeIcon,
   MessageSquareText,
   Phone,
   UserPlus2Icon,
@@ -7,6 +8,7 @@ import {
 
 function ChatActionBar({ activeTab, onTabChange }) {
   const tabs = [
+    { name: "home", icon: HomeIcon, label: "Home" },
     { name: "chats", icon: MessageSquareText, label: "Chats" },
     { name: "status", icon: CirclePlayIcon, label: "Status" },
     { name: "friends", icon: UserPlus2Icon, label: "Friends" },
@@ -38,7 +40,7 @@ function ChatActionBar({ activeTab, onTabChange }) {
       </div>
 
       {/* Mobile */}
-      <div className="flex lg:hidden items-center gap-4 w-full justify-evenly">
+      <div className="flex lg:hidden items-center gap-4 w-full justify-evenly mb-5">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.name;

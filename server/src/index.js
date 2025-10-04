@@ -4,6 +4,7 @@ import profileRoutes from "./router/profileRoutes.js";
 import messageRoutes from "./router/messageRoutes.js";
 import friendRoutes from "./router/friendRoutes.js";
 import groupRoutes from "./router/groupRoutes.js";
+import matchRoutes from "./router/matchRoutes.js";
 import ConnectDb from "../Db/ConnectDb.js";
 import { app, server } from "../sockets/socket.js";
 import cors from "cors";
@@ -24,6 +25,8 @@ app.use(
 app.use("/api/auth", authRoutes);
 //profile routes
 app.use("/api/profile", profileRoutes);
+//matches swipes
+app.use("/api/match", matchRoutes);
 //messages routes
 app.use("/api/message", messageRoutes);
 //friens routes

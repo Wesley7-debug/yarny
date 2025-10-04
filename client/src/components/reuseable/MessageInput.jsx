@@ -1,11 +1,13 @@
 import { useRef, useState } from "react";
 import { Image, Send, X, Wand2 } from "lucide-react";
+import messageStore from "../../store/messageStore";
 
 const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
+  const { sendMessage } = messageStore();
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -28,6 +30,12 @@ const MessageInput = () => {
       textarea.style.height = "auto";
       textarea.style.height = `${textarea.scrollHeight}px`;
     }
+  };
+
+  const handleSubmit = ({ text, imagePreview }) => {
+    sendMessage({ text, image: imagePreview });
+    setText("");
+    setImagePreview(null);
   };
 
   return (
@@ -53,7 +61,13 @@ const MessageInput = () => {
       )}
 
       {/* Message Form */}
-      <form className="flex items-end gap-2">
+      <form
+        className="flex items-end gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit({ text, imagePreview }); // Pass the data as needed
+        }}
+      >
         <div className="flex-1 relative">
           {/* Textarea */}
           <textarea

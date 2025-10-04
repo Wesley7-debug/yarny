@@ -3,10 +3,13 @@ import { create } from "zustand";
 
 const CLIENT_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 
-const friendsStore = create((set) => ({
+const friendsStore = create((set, get) => ({
   friends: [],
   friendInfo: [],
-  isGettingUsersFriends: false,
+  onlineUsersId: [],
+  isGettingUsersFriends: true,
+  hasFetchedFriends: false,
+
   isGettingUsersFriendRequest: false,
   isAcceptingFriendRequest: false,
   isRejectingFriendRequest: false,
@@ -14,23 +17,32 @@ const friendsStore = create((set) => ({
   isRemovingUserFriend: false,
 
   getAllUserFriends: async () => {
+    const { hasFetchedFriends } = get();
+
+    // Prevent re-fetch if already fetched
+    if (hasFetchedFriends) return;
+
     set({ isGettingUsersFriends: true });
+
     try {
       const res = await fetch(`${CLIENT_URL}/api/friends`, {
         credentials: "include",
       });
+
       if (res.ok) {
         const data = await res.json();
-        set({ friends: data.friends });
+        console.log("✅ Friends data:", data);
+        set({ friends: data.friends, hasFetchedFriends: true });
       } else {
         throw new Error("Failed to fetch friends");
       }
     } catch (error) {
-      console.error("Error fetching friends:", error);
+      console.error("❌ Error fetching friends:", error);
     } finally {
       set({ isGettingUsersFriends: false });
     }
   },
+
   getFriendsInfo: async (id) => {
     set({ isGettingFriendInfo: true });
     try {

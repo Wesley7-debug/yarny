@@ -95,7 +95,7 @@ export default function CallTab() {
   };
 
   return (
-    <div className="bg-white min-h-screen text-black w-full p-6 md:p-10  mx-auto">
+    <div className="bg-white min-h-screen text-black w-full pt-15 p-6 md:p-10  mx-auto">
       <h2 className="text-3xl font-bold mb-8">Calls</h2>
 
       {/* Missed Calls */}

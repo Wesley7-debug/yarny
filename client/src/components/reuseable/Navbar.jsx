@@ -15,7 +15,7 @@ import authStore from "../../store/authStore";
 import Dropdown from "../ui/Dropdown";
 
 const Navbar = () => {
-  const { logout, authUser } = authStore();
+  const { signOut, authUser } = authStore();
   const dropdownOptions = [
     {
       label: (
@@ -46,7 +46,9 @@ const Navbar = () => {
           {
             label: (
               <button
-                onClick={logout}
+                onClick={() => {
+                  signOut();
+                }}
                 className="flex items-center gap-2 w-full text-left"
               >
                 <LogOut className="w-4 h-4" />
