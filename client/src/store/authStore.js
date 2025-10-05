@@ -181,9 +181,13 @@ const useAuthStore = create(
         }
       },
 
-      connectSocket: (onReady) => {
+      connectSocket: () => {
         const { socket, authUser } = get();
+
+        // Prevent duplicate connections
         if (socket || !authUser?.userId) return;
+
+        console.log("🟡 Attempting socket connection...");
 
         const newSocket = io(CLIENT_URL, {
           withCredentials: true,
@@ -191,17 +195,26 @@ const useAuthStore = create(
         });
 
         newSocket.on("connect", () => {
-          console.log("✅ Connected to socket server");
-          onReady?.(newSocket); // <-- Notify when ready
+          console.log("✅ Socket connected:", newSocket.id);
+
+          // Request online users explicitly after connect
+          newSocket.emit("getOnlineUsers");
         });
 
-        newSocket.on("disconnect", () => {
-          console.log("❌ Disconnected from socket server");
+        newSocket.on("disconnect", (reason) => {
+          console.log("❌ Socket disconnected:", reason);
         });
 
+        // Server should emit this on new connection or disconnection of users
         newSocket.on("getOnlineUsers", (onlineUsers) => {
-          console.log("🔁 Online users update:", onlineUsers);
+          console.log("📡 Received online users list:", onlineUsers);
           friendsStore.setState({ onlineUsersId: onlineUsers });
+        });
+
+        // Optional: reconnection logic
+        newSocket.io.on("reconnect", () => {
+          console.log("🔁 Socket reconnected:", newSocket.id);
+          newSocket.emit("getOnlineUsers");
         });
 
         set({ socket: newSocket });
