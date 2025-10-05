@@ -28,9 +28,13 @@ export const getOrCreateConversationWithMessages = async (req, res) => {
 
     const messages = await Message.find({ conversationId: conversation._id })
       .sort({ createdAt: 1 })
+      .populate("senderId", "username avatarUrl")
       .lean();
 
-    return res.status(200).json(messages);
+    return res.status(200).json({
+      conversationId: conversation._id,
+      messages,
+    });
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -51,15 +55,36 @@ export const sendMessage = async (req, res) => {
     if (!conversation) {
       return res.status(404).json({ message: "Conversation not found" });
     }
-    const updatedUrl = await cloudinary.uploader.upload(image);
+
+    // Find the receiver: the other participant in the conversation
+    const receiverId = conversation.participants.find(
+      (participantId) => participantId.toString() !== senderId.toString()
+    );
+
+    if (!receiverId) {
+      return res
+        .status(400)
+        .json({ message: "Receiver not found in conversation" });
+    }
+
+    let imageUrl = null;
+    if (image) {
+      if (image.startsWith("data:")) {
+        const uploaded = await cloudinary.uploader.upload(image);
+        imageUrl = uploaded.secure_url;
+      } else {
+        imageUrl = image;
+      }
+    }
 
     const newMessage = new Message({
       conversationId,
       senderId,
-      receiverId: null, // optional for group chat
+      receiverId, // pass the correct receiver id here
       text,
-      image: updatedUrl.secure_url || null,
+      image: imageUrl,
     });
+
     conversation.participants.forEach((participantId) => {
       if (participantId.toString() !== senderId.toString()) {
         const socketId = getReceiverSocketId(participantId.toString());
@@ -105,7 +130,10 @@ export const editMessage = async (req, res) => {
     }
     await message.save();
 
-    return res.status(200).json(message);
+    return res.status(200).json({
+      conversationId: conversation._id,
+      messages,
+    });
   } catch (error) {
     console.error("Error editing message:", error);
     return res.status(500).json({ message: "Internal server error" });

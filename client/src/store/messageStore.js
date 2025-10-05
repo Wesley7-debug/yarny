@@ -6,12 +6,13 @@ const messageStore = create((set, get) => ({
   messages: [],
   isGettingConversation: false,
   selectedUser: null,
+  conversationId: null,
 
   getMessages: async (Id) => {
     set({ isGettingConversation: true });
 
     try {
-      const response = await fetch(`${CLIENT_URL}/api/messages/${Id}`, {
+      const response = await fetch(`${CLIENT_URL}/api/message/${Id}`, {
         method: "GET",
         credentials: "include",
       });
@@ -19,9 +20,12 @@ const messageStore = create((set, get) => ({
         const text = await response.text();
         throw new Error(`Error ${response.status}: ${text}`);
       }
-      const data = await response.json();
 
-      set({ messages: data });
+      const data = await response.json();
+      set({
+        messages: data.messages || data,
+        conversationId: data.conversationId,
+      });
     } catch (error) {
       console.error("Failed to fetch messages:", error);
     } finally {
@@ -30,10 +34,14 @@ const messageStore = create((set, get) => ({
   },
 
   sendMessage: async ({ text, image }) => {
-    const { selectedUser } = get();
+    const { conversationId } = get();
+    if (!conversationId) {
+      console.log("id not found");
+      return;
+    }
     try {
       const response = await fetch(
-        `${CLIENT_URL}/api/messages/send${selectedUser._id}`,
+        `${CLIENT_URL}/api/message/send/${conversationId}`,
         {
           method: "POST",
           headers: {
@@ -43,6 +51,11 @@ const messageStore = create((set, get) => ({
           credentials: "include",
         }
       );
+      if (!response.ok) {
+        const text = await response.text();
+        console.log("error sending message text", text);
+        return;
+      }
       const data = await response.json();
       set((state) => ({
         messages: [...state.messages, data],
@@ -54,7 +67,7 @@ const messageStore = create((set, get) => ({
   editMessage: async (Id, messageId, newMessage) => {
     try {
       const response = await fetch(
-        `${CLIENT_URL}/api/messages/edit${messageId}`,
+        `${CLIENT_URL}/api/message/edit/${messageId}`,
         {
           method: "PUT",
           headers: {
@@ -76,7 +89,7 @@ const messageStore = create((set, get) => ({
   },
   deleteMessage: async (Id, messageId) => {
     try {
-      await fetch(`${CLIENT_URL}/api/messages/delete${messageId}`, {
+      await fetch(`${CLIENT_URL}/api/message/delete/${messageId}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -109,9 +122,13 @@ const messageStore = create((set, get) => ({
     socket.off("newMessage");
   },
 
-  setSelectedUser: (selectedUser) => {
+  setSelectedUser: async (selectedUser) => {
     console.log("Setting selectedUser:", selectedUser);
     set({ selectedUser });
+
+    if (selectedUser && selectedUser._id) {
+      await get().getMessages(selectedUser._id);
+    }
   },
 }));
 
