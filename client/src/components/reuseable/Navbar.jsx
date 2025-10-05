@@ -19,7 +19,7 @@ const Navbar = () => {
   const dropdownOptions = [
     {
       label: (
-        <Link to="/newGroup" className="flex items-center gap-2 w-full">
+        <Link to="/create-group" className="flex items-center gap-2 w-full">
           <PlusCircle className="w-4 h-4" />
           <span className="">New Group</span>
         </Link>

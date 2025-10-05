@@ -7,6 +7,7 @@ import {
   createGroup,
   exitGroup,
   generateGroupInviteLink,
+  getGroupMessages,
   getUserGroups,
   joinGroupByInviteLink,
   rejectGroupInvitation,
@@ -15,7 +16,9 @@ import {
 const router = express.Router();
 
 //get all group
-router.post("/", requireAuth, getUserGroups);
+router.get("/", requireAuth, getUserGroups);
+//get a single group message
+router.get("/:groupId/messages", requireAuth, getGroupMessages);
 //CREATE GROUP
 router.post("/create-group", requireAuth, createGroup);
 //acept invitaiton

@@ -1,7 +1,10 @@
+import mongoose from "mongoose";
 import Conversation from "../models/Conversation.js";
+import Message from "../models/Message.js";
 
 //get all the geoup the user is in
 export const getUserGroups = async (req, res) => {
+  console.log("✅ GET /api/group called"); // Add this
   const userId = req.user?.id || req.user?._id;
 
   if (!userId) {
@@ -16,13 +19,29 @@ export const getUserGroups = async (req, res) => {
       .populate("participants", "username _id")
       .populate("admin", "username _id");
 
-    if (!groups || groups.length === 0) {
-      return res.status(404).json({ message: "No groups found for this user" });
-    }
-
     return res.status(200).json({ groups });
   } catch (error) {
     console.error("Error fetching user groups:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getGroupMessages = async (req, res) => {
+  const { id: userId } = req.user?.id || req.user?._id;
+  const { conversationId: groupId } = req.params;
+
+  if (!userId || !groupId) {
+    return res.status(400).json({ message: "Missing user ID or group ID" });
+  }
+
+  try {
+    const messages = await Message.find({ conversationId: groupId })
+      .populate("sender", "username _id")
+      .sort({ createdAt: 1 });
+
+    return res.status(200).json({ messages });
+  } catch (error) {
+    console.error("Error fetching group messages:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -31,32 +50,58 @@ export const createGroup = async (req, res) => {
   const userId = req.user?.id || req.user?._id;
   const { name, participants = [], groupAvatar } = req.body;
 
+  console.log("Received body:", req.body);
+
+  // Basic validation
   if (!userId || !name || participants.length <= 0) {
-    return res
-      .status(400)
-      .json({ message: "Group name and user ID are required" });
+    return res.status(400).json({
+      message: "Group name and at least one participant are required.",
+    });
   }
 
-  // Ensure creator is in the participant list
-  const uniqueParticipants = new Set(participants.map(String));
-  uniqueParticipants.add(String(userId)); // add creator if not included
-
   try {
+    // Normalize and ensure unique participant IDs
+    const uniqueParticipantIds = new Set();
+
+    // Convert participant IDs to strings (in case they’re objects)
+    for (const participant of participants) {
+      const id =
+        typeof participant === "object" ? participant._id : participant;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res
+          .status(400)
+          .json({ message: `Invalid participant ID: ${id}` });
+      }
+      uniqueParticipantIds.add(String(id));
+    }
+
+    // Ensure creator is part of the group
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user ID (creator)." });
+    }
+    uniqueParticipantIds.add(String(userId));
+
+    // Convert to ObjectIds
+    const participantObjectIds = Array.from(uniqueParticipantIds).map(
+      (id) => new mongoose.Types.ObjectId(id)
+    );
+
+    // Create the group
     const newGroup = new Conversation({
       name,
       isGroup: true,
-      participants: Array.from(uniqueParticipants).map(
-        (id) => new mongoose.Types.ObjectId(id)
-      ),
-      admin: [userId], // creator becomes admin
+      participants: participantObjectIds,
+      admin: [new mongoose.Types.ObjectId(userId)],
       groupAvatar: groupAvatar || null,
+      inviteTokens: [],
     });
 
     await newGroup.save();
 
-    return res
-      .status(201)
-      .json({ message: "Group created successfully", group: newGroup });
+    return res.status(201).json({
+      message: "Group created successfully",
+      group: newGroup,
+    });
   } catch (error) {
     console.error("Error creating group:", error);
     return res.status(500).json({ message: "Internal server error" });

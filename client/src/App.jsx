@@ -12,6 +12,7 @@ import "react-toastify/dist/ReactToastify.css";
 import FriendsProfile from "./pages/FriendsProfile";
 import CompleteSignup from "./pages/CompleteSignup";
 import messageStore from "./store/messageStore";
+import CreateGroupPage from "./pages/CreateGroupPage";
 
 const App = () => {
   const { authUser, isAuthenticating, CheckAuth } = authStore();
@@ -55,6 +56,10 @@ const App = () => {
         <Route
           path="/completeSignup"
           element={authUser ? <CompleteSignup /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/create-group"
+          element={authUser ? <CreateGroupPage /> : <Navigate to="/Login" />}
         />
         <Route
           path="/SignUp"
