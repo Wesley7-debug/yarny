@@ -1,13 +1,62 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Image, Send, X, Wand2 } from "lucide-react";
 import messageStore from "../../store/messageStore";
+import useAuthStore from "../../store/authStore";
 
 const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
-  const { sendMessage } = messageStore();
+  const { sendMessage, conversationId } = messageStore();
+  const { socket, authUser } = useAuthStore();
+  const userId = authUser?.userId; // current user ID
+
+  const typingTimeoutRef = useRef(null);
+
+  const emitTyping = () => {
+    if (socket && conversationId && userId) {
+      socket.emit("typing", { conversationId, userId });
+      console.log("emitted", socket, conversationId, userId);
+
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.emit("stopTyping", { conversationId, userId });
+      }, 2000);
+    }
+  };
+
+  const handleChange = (e) => {
+    setText(e.target.value);
+
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+
+    emitTyping();
+  };
+  const handleSubmit = ({ text, imagePreview }) => {
+    sendMessage({ text, image: imagePreview });
+    setText("");
+    setImagePreview(null);
+
+    if (socket && conversationId && userId) {
+      socket.emit("stopTyping", { conversationId, userId });
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      if (socket && conversationId && userId) {
+        socket.emit("stopTyping", { conversationId, userId });
+      }
+    };
+  }, [socket, conversationId, userId]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -21,21 +70,6 @@ const MessageInput = () => {
   const removeImage = () => {
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const handleChange = (e) => {
-    setText(e.target.value);
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = "auto";
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    }
-  };
-
-  const handleSubmit = ({ text, imagePreview }) => {
-    sendMessage({ text, image: imagePreview });
-    setText("");
-    setImagePreview(null);
   };
 
   return (

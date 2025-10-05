@@ -14,10 +14,72 @@ import {
 import Dropdown from "../ui/Dropdown";
 import { Link } from "react-router-dom";
 import messageStore from "../../store/messageStore";
+import friendsStore from "../../store/friendsStore";
+import { useEffect } from "react";
+import useAuthStore from "../../store/authStore";
+import useTypingStore from "../../store/typingStore";
 
 const ChatHeader = () => {
-  const { selectedUser, setSelectedUser } = messageStore();
-  if (!selectedUser) return null; // 👈 Prevent rendering when user is not selected
+  const { selectedUser, setSelectedUser, conversationId } = messageStore();
+
+  const { onlineUsersId } = friendsStore();
+  const { socket } = useAuthStore();
+
+  const typingInfo = useTypingStore((state) => state.typingInfo);
+  const setTypingInfo = useTypingStore((state) => state.setTypingInfo);
+  const clearTypingInfo = useTypingStore((state) => state.clearTypingInfo);
+  useEffect(() => {
+    console.log("socket:", socket);
+    if (!socket) return;
+
+    const logAllTyping = (data) => {
+      console.log("Received userTyping event (global listener)", data);
+    };
+
+    socket.on("userTyping", logAllTyping);
+
+    return () => {
+      socket.off("userTyping", logAllTyping);
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    if (!socket || !selectedUser || !conversationId) return;
+    console.log("Attaching typing listeners", {
+      socketId: socket.id,
+      selectedUser,
+      conversationId,
+    });
+    socket.emit("joinConversation", conversationId);
+    console.log("Joined conversation room:", conversationId);
+
+    const handleTyping = ({ userId, conversationId: incomingConvId }) => {
+      console.log("handleTyping", { userId, incomingConvId });
+      if (incomingConvId === conversationId && userId === selectedUser._id) {
+        console.log("Set typing info:", { userId, conversationId });
+        setTypingInfo({ userId, conversationId });
+      }
+    };
+
+    const handleStopTyping = ({ userId, conversationId: incomingConvId }) => {
+      console.log("handleStopTyping", { userId, incomingConvId });
+      if (incomingConvId === conversationId && userId === selectedUser._id) {
+        console.log("Clear typing info:", { userId, conversationId });
+        clearTypingInfo();
+      }
+    };
+
+    socket.on("userTyping", handleTyping);
+    socket.on("userStoppedTyping", handleStopTyping);
+
+    return () => {
+      socket.off("userTyping", handleTyping);
+      socket.off("userStoppedTyping", handleStopTyping);
+    };
+  }, [socket, selectedUser, conversationId, clearTypingInfo, setTypingInfo]);
+
+  if (!selectedUser) return null;
+  console.log("typing info", { typingInfo });
 
   const chatHeaderDropdownOptions = [
     {
@@ -74,7 +136,12 @@ const ChatHeader = () => {
           <div>
             <h3 className="font-medium">{selectedUser.nickname}</h3>
             <p className="text-sm text-base-content/70">
-              {/* {onlineUsersId.includes(selectedUser._id) ? "Online" : "Offline"} */}
+              {typingInfo?.userId === selectedUser._id &&
+              typingInfo?.conversationId === conversationId
+                ? "typing..."
+                : onlineUsersId.includes(selectedUser._id)
+                ? "Online"
+                : "Offline"}
             </p>
           </div>
         </div>

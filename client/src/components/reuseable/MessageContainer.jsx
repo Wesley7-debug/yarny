@@ -35,6 +35,14 @@ const MessageContainer = () => {
   const currentUserId = selectedUser?._id;
   const bottomRef = useRef(null);
 
+  useEffect(() => {
+    messageStore.getState().subscribeToMessages();
+
+    return () => {
+      messageStore.getState().unsubscribeFromMessages();
+    };
+  }, [messageStore.getState().selectedUser]);
+
   // For image gallery preview
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState([]); // array of image URLs
@@ -102,7 +110,12 @@ const MessageContainer = () => {
           messages
             .filter((msg) => msg && msg.senderId)
             .map((msg) => {
-              const isSender = msg.senderId?._id === authUser?.userId;
+              const senderId =
+                typeof msg.senderId === "string"
+                  ? msg.senderId
+                  : msg.senderId?._id;
+
+              const isSender = senderId === authUser?.userId;
               const dateLabel = formatDateLabel(msg.createdAt);
               const showDateLabel = dateLabel !== lastDateLabel;
               lastDateLabel = dateLabel;

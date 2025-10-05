@@ -1,5 +1,6 @@
 import { toast } from "react-toastify";
 import { create } from "zustand";
+import useAuthStore from "./authStore";
 
 const CLIENT_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 
@@ -153,6 +154,25 @@ const friendsStore = create((set, get) => ({
     } finally {
       set({ isRemovingUserFriend: false });
     }
+  },
+  listenForOnlineUsers: () => {
+    const checkSocket = () => {
+      const { socket } = useAuthStore.getState();
+
+      if (!socket) {
+        console.warn("⏳ Socket not ready, retrying...");
+        setTimeout(checkSocket, 5000); // Retry in 500ms
+        return;
+      }
+
+      console.log("✅ Socket is ready. Listening for online users...");
+      socket.on("getOnlineUsers", (userIds) => {
+        console.log("👥 Received online users:", userIds);
+        set({ onlineUsersId: userIds });
+      });
+    };
+
+    checkSocket();
   },
 }));
 

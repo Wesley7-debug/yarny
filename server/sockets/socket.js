@@ -1,117 +1,3 @@
-// import { Server } from "socket.io";
-// import http from "http";
-// import express from "express";
-
-// const app = express();
-// const server = http.createServer(app);
-
-// const io = new Server(server, {
-//   cors: {
-//     origin: ["http://localhost:5173"],
-//     credentials: true,
-//   },
-// });
-
-// // Store multiple socket IDs per user
-// const userSocketMap = {}; // { userId: [socketId1, socketId2, ...] }
-// const onlineUsers = new Set(); // Track online users explicitly
-// const disconnectTimeouts = {}; // Delayed offline timers per user
-
-// export function getReceiverSocketId(userId) {
-//   return userSocketMap[userId]?.[0];
-// }
-
-// io.on("connection", (socket) => {
-//   console.log("A user connected", socket.id);
-
-//   const userId = socket.handshake.query.userId;
-
-//   if (userId) {
-//     // Add socket ID to user
-//     if (!userSocketMap[userId]) {
-//       userSocketMap[userId] = [];
-//     }
-//     userSocketMap[userId].push(socket.id);
-
-//     // User is online: cancel any pending offline timeout
-//     if (disconnectTimeouts[userId]) {
-//       clearTimeout(disconnectTimeouts[userId]);
-//       delete disconnectTimeouts[userId];
-//     }
-
-//     onlineUsers.add(userId);
-
-//     // Broadcast updated online users list
-//     io.emit("getOnlineUsers", Array.from(onlineUsers));
-//   }
-
-//   // Join conversation rooms
-//   socket.on("joinConversation", (conversationId) => {
-//     socket.join(conversationId);
-//   });
-
-//   // Typing indicators
-//   socket.on("typing", ({ conversationId, userId }) => {
-//     socket.to(conversationId).emit("userTyping", { conversationId, userId });
-//   });
-
-//   socket.on("stopTyping", ({ conversationId, userId }) => {
-//     socket
-//       .to(conversationId)
-//       .emit("userStoppedTyping", { conversationId, userId });
-//   });
-
-//   // Explicit logout event from client
-//   socket.on("logout", () => {
-//     if (userId) {
-//       console.log(`User ${userId} logged out`);
-//       // Remove all sockets for this user
-//       if (userSocketMap[userId]) {
-//         userSocketMap[userId].forEach((sid) => {
-//           const s = io.sockets.sockets.get(sid);
-//           if (s) {
-//             s.disconnect(true); // disconnect all sockets forcibly
-//           }
-//         });
-//       }
-//       delete userSocketMap[userId];
-//       onlineUsers.delete(userId);
-
-//       // Clear any disconnect timeouts
-//       if (disconnectTimeouts[userId]) {
-//         clearTimeout(disconnectTimeouts[userId]);
-//         delete disconnectTimeouts[userId];
-//       }
-
-//       io.emit("getOnlineUsers", Array.from(onlineUsers));
-//     }
-//   });
-
-//   socket.on("disconnect", () => {
-//     console.log("A user disconnected", socket.id);
-
-//     if (userId && userSocketMap[userId]) {
-//       // Remove this socket id from user's list
-//       userSocketMap[userId] = userSocketMap[userId].filter(
-//         (id) => id !== socket.id
-//       );
-
-//       if (userSocketMap[userId].length === 0) {
-//         // Delay marking user offline by 10 seconds (for refresh/reconnect)
-//         disconnectTimeouts[userId] = setTimeout(() => {
-//           delete userSocketMap[userId];
-//           onlineUsers.delete(userId);
-//           io.emit("getOnlineUsers", Array.from(onlineUsers));
-//           delete disconnectTimeouts[userId];
-//           console.log(`User ${userId} marked offline after timeout`);
-//         }, 10000); // 10 seconds timeout
-//       }
-//     }
-//   });
-// });
-
-// export { io, app, server };
-
 import { Server } from "socket.io";
 import http from "http";
 import express from "express";
@@ -170,8 +56,11 @@ io.on("connection", (socket) => {
     socket.join(conversationId);
   });
 
-  // ✅ Typing events
+  // ✅ Typing event
   socket.on("typing", ({ conversationId, userId }) => {
+    console.log(
+      `➡️ Received typing from ${userId} in conversation ${conversationId}`
+    );
     socket.to(conversationId).emit("userTyping", { conversationId, userId });
   });
 

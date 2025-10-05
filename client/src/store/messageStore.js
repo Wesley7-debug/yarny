@@ -105,6 +105,10 @@ const messageStore = create((set, get) => ({
     if (!selectedUser) return;
 
     const socket = authStore.getState().socket;
+    if (!socket) {
+      console.warn("Socket not connected yet");
+      return;
+    }
 
     socket.on("newMessage", (newMessage) => {
       const isMessageSentFromSelectedUser =

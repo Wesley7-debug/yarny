@@ -8,13 +8,19 @@ import { useEffect } from "react";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
 
 const Sidebar = () => {
-  const { friends, isGettingUsersFriends, getAllUserFriends, onlineUsersId } =
-    friendsStore();
+  const {
+    friends,
+    isGettingUsersFriends,
+    listenForOnlineUsers,
+    getAllUserFriends,
+    onlineUsersId,
+  } = friendsStore();
   const { selectedUser, setSelectedUser } = messageStore();
 
   useEffect(() => {
+    listenForOnlineUsers();
     getAllUserFriends(); // <-- This triggers the fetch
-  }, [getAllUserFriends]);
+  }, [getAllUserFriends, listenForOnlineUsers]);
 
   return (
     <aside className="h-full w-full pt-15 lg:w-72 border-r border-base-300 flex flex-col transition-all duration-200">
