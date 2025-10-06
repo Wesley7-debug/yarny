@@ -1,13 +1,25 @@
 import { create } from "zustand";
+import messageStore from "./messageStore";
 
 const CLIENT_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 
-const useGroupStore = create((set) => ({
+const useGroupStore = create((set, get) => ({
   groups: [],
   groupMessages: [],
+  selectedGroup: null,
   isGettingGroupMessages: false,
   isGettingGroups: false,
   isCreatingGroup: false,
+
+  setSelectedGroup: async (selectedGroup) => {
+    console.log("Setting   setSelectedgroup:", selectedGroup);
+    messageStore.setState({ selectedUser: null });
+    set({ selectedGroup });
+
+    if (selectedGroup && selectedGroup._id) {
+      await get().getGroupMessages(selectedGroup._id);
+    }
+  },
 
   getUsersGroup: async () => {
     set({ isGettingGroups: true });
@@ -31,25 +43,34 @@ const useGroupStore = create((set) => ({
     }
   },
 
-  getGroupMessages: async (groupId) => {
+  getGroupMessages: async () => {
+    const { selectedGroup } = get();
     set({ isGettingGroupMessages: true });
     try {
       const response = await fetch(
-        `${CLIENT_URL}/api/group/${groupId}/messages`
+        `${CLIENT_URL}/api/group/${selectedGroup._id}/messages`,
+        {
+          credentials: "include",
+        }
       );
 
       if (!response.ok) {
-        console.error(`Failed to fetch messages for group ${groupId}`);
+        console.error(
+          `Failed to fetch messages for group ${selectedGroup._id}`
+        );
         set({ isGettingGroupMessages: false });
         return;
       }
 
       const messages = await response.json();
-      console.log(`Fetched messages for group ${groupId}:`, messages);
+      console.log(`Fetched messages for group ${selectedGroup._id}:`, messages);
 
       set({ groupMessages: messages, isGettingGroupMessages: false });
     } catch (error) {
-      console.error(`Error fetching messages for group ${groupId}:`, error);
+      console.error(
+        `Error fetching messages for group ${selectedGroup._id}:`,
+        error
+      );
       set({ isGettingGroupMessages: false });
     }
   },

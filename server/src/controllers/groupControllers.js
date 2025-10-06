@@ -27,8 +27,8 @@ export const getUserGroups = async (req, res) => {
 };
 
 export const getGroupMessages = async (req, res) => {
-  const { id: userId } = req.user?.id || req.user?._id;
-  const { conversationId: groupId } = req.params;
+  const userId = req.user?.id || req.user?._id;
+  const { groupId } = req.params;
 
   if (!userId || !groupId) {
     return res.status(400).json({ message: "Missing user ID or group ID" });

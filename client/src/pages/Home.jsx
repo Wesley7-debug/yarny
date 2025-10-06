@@ -9,26 +9,39 @@ import FriendsTab from "../components/reuseable/FriendsTab";
 import CallTab from "../components/reuseable/CallTab";
 import MatchingHomeTab from "../components/reuseable/MatchingHomeTab";
 import messageStore from "../store/messageStore";
+import useGroupStore from "../store/groupStore";
+import GroupChatMessgaeContainer from "../components/reuseable/GroupChatMessgaeContainer";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("home"); // Default to "home" tab
   const isMobile = useIsMobile();
   const { selectedUser } = messageStore();
+  const { selectedGroup } = useGroupStore();
 
   // Determine what to render based on active tab
   const renderContent = () => {
     switch (activeTab) {
       case "chats":
         if (isMobile) {
-          return selectedUser ? <MessageContainer /> : <Sidebar />;
+          if (selectedGroup)
+            return <GroupChatMessgaeContainer group={selectedGroup} />;
+          if (selectedUser) return <MessageContainer />;
+          return <Sidebar />;
         } else {
           return (
             <>
               <Sidebar />
-              {selectedUser ? <MessageContainer /> : <NoChatSelected />}
+              {selectedGroup ? (
+                <GroupChatMessgaeContainer group={selectedGroup} />
+              ) : selectedUser ? (
+                <MessageContainer />
+              ) : (
+                <NoChatSelected />
+              )}
             </>
           );
         }
+
       case "home":
         return <MatchingHomeTab />;
 
@@ -48,7 +61,7 @@ export default function Home() {
 
   return (
     <div className="h-screen">
-      {!selectedUser && (
+      {!selectedUser && !selectedGroup && (
         <ChatActionBar activeTab={activeTab} onTabChange={setActiveTab} />
       )}
 

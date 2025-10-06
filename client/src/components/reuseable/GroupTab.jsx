@@ -1,18 +1,22 @@
 import React, { useEffect } from "react";
-import messageStore from "../../store/messageStore";
 import useGroupStore from "../../store/groupStore";
 
 const GroupTab = () => {
-  const { selectedUser, setSelectedUser } = messageStore();
-  const { groups, getUsersGroup, getGroupMessages, isGettingGroups } =
-    useGroupStore();
+  const {
+    groups,
+    getUsersGroup,
+    getGroupMessages,
+    isGettingGroups,
+    selectedGroup,
+    setSelectedGroup,
+  } = useGroupStore();
 
   useEffect(() => {
     getUsersGroup(); // Fetch groups when component mounts
   }, [getUsersGroup]);
 
   const handleGroupClick = async (group) => {
-    setSelectedUser({ ...group, isGroup: true });
+    setSelectedGroup({ ...group, isGroup: true });
     await getGroupMessages(group._id); // Fetch group messages
   };
 
@@ -34,13 +38,13 @@ const GroupTab = () => {
     <div className="max-w-full overflow-hidden rounded-lg">
       {groups.map((group) => {
         const isSelected =
-          selectedUser?._id === group._id && selectedUser?.isGroup;
+          selectedGroup?._id === group._id && selectedGroup?.isGroup;
 
         return (
           <button
             key={group._id}
             onClick={() => handleGroupClick(group)}
-            className={`w-full flex items-center px-4 py-3 border-b border-purple-100 cursor-pointer transition-colors rounded-lg text-left ${
+            className={`w-full flex items-center px-4 py-3 border-b-4 border-purple-100 cursor-pointer transition-colors rounded-lg text-left ${
               isSelected
                 ? "bg-purple-700 text-white"
                 : group.unread
@@ -52,7 +56,7 @@ const GroupTab = () => {
               src={group.avatar || "/Images/group.png"}
               alt={group.name}
               className={`w-12 h-12 rounded-full mr-4 border-2 ${
-                isSelected ? "border-white" : "border-purple-600"
+                isSelected ? "border-purple-600" : "border-white"
               }`}
             />
             <div className="flex-1 min-w-0">

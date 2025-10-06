@@ -13,9 +13,12 @@ import FriendsProfile from "./pages/FriendsProfile";
 import CompleteSignup from "./pages/CompleteSignup";
 import messageStore from "./store/messageStore";
 import CreateGroupPage from "./pages/CreateGroupPage";
+import useGroupStore from "./store/groupStore";
+import GroupProfile from "./pages/GroupProfile";
 
 const App = () => {
   const { authUser, isAuthenticating, CheckAuth } = authStore();
+  const selectedGroup = useGroupStore((state) => state.selectedGroup);
   const selectedUser = messageStore((state) => state.selectedUser);
 
   const location = useLocation();
@@ -36,7 +39,10 @@ const App = () => {
 
   const showNavbarOn = ["/", "/settings"];
   const showNavbar =
-    authUser && showNavbarOn.includes(location.pathname) && !selectedUser;
+    authUser &&
+    showNavbarOn.includes(location.pathname) &&
+    !selectedUser &&
+    !selectedGroup;
 
   return (
     <div>
@@ -68,6 +74,10 @@ const App = () => {
         <Route
           path="/friendsProfile"
           element={authUser ? <FriendsProfile /> : <Navigate to="/Login" />}
+        />
+        <Route
+          path="/group-profile"
+          element={authUser ? <GroupProfile /> : <Navigate to="/Login" />}
         />
       </Routes>
     </div>

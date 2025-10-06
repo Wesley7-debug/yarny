@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import authStore from "./authStore";
+import useGroupStore from "./groupStore";
 
 const CLIENT_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 const messageStore = create((set, get) => ({
@@ -128,6 +129,7 @@ const messageStore = create((set, get) => ({
 
   setSelectedUser: async (selectedUser) => {
     console.log("Setting selectedUser:", selectedUser);
+    useGroupStore.setState({ selectedGroup: null });
     set({ selectedUser });
 
     if (selectedUser && selectedUser._id) {
