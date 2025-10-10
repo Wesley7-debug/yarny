@@ -4,7 +4,6 @@ const conversationSchema = new mongoose.Schema(
   {
     name: { type: String },
     isGroup: { type: Boolean, default: false },
-    isDeleted: { type: Boolean, default: false },
     participants: [
       { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     ],

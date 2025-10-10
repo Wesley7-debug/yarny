@@ -18,9 +18,22 @@ import friendsStore from "../../store/friendsStore";
 import { useEffect } from "react";
 import useAuthStore from "../../store/authStore";
 import useTypingStore from "../../store/typingStore";
+import useWebRTC from "../../../hooks/useWebRTC";
+import useCallStore from "../../store/useCallStore";
 
 const ChatHeader = () => {
   const { selectedUser, setSelectedUser, conversationId } = messageStore();
+  const { setCalleeUser, setShowCallScreen } = useCallStore();
+  const { callUser } = useWebRTC({
+    roomId: conversationId,
+    user: socket?.id,
+  });
+
+  const handleCall = () => {
+    setCalleeUser(selectedUser);
+    setShowCallScreen(true);
+    callUser(selectedUser._id);
+  };
 
   const { onlineUsersId } = friendsStore();
   const { socket } = useAuthStore();
@@ -148,10 +161,18 @@ const ChatHeader = () => {
 
         {/* Right-side buttons */}
         <div className="flex items-center gap-2">
-          <button aria-label="Start video chat" className="ml-3">
+          <button
+            aria-label="Start video chat"
+            className="ml-3"
+            onClick={() => handleCall()}
+          >
             <VideoIcon className="w-5 h-5" />
           </button>
-          <button aria-label="Start phone call" className="ml-3">
+          <button
+            aria-label="Start phone call"
+            className="ml-3"
+            onClick={() => handleCall({ audioOnly: true })}
+          >
             <Phone className="w-[18px] h-[18px]" />
           </button>
           <Dropdown

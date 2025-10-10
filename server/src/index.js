@@ -5,6 +5,7 @@ import messageRoutes from "./router/messageRoutes.js";
 import friendRoutes from "./router/friendRoutes.js";
 import groupRoutes from "./router/groupRoutes.js";
 import matchRoutes from "./router/matchRoutes.js";
+import statusRoutes from "./router/statusRoutes.js";
 import ConnectDb from "../Db/ConnectDb.js";
 import { app, server } from "../sockets/socket.js";
 import cors from "cors";
@@ -34,6 +35,8 @@ app.use("/api/message", messageRoutes);
 app.use("/api/friends", friendRoutes);
 //group routes
 app.use("/api/group", groupRoutes);
+//status route
+app.use("/api/status", statusRoutes);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

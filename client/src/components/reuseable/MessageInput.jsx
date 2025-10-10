@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Image, Send, X, Wand2 } from "lucide-react";
 import messageStore from "../../store/messageStore";
 import useAuthStore from "../../store/authStore";
+import useGroupStore from "../../store/groupStore";
 
 const MessageInput = () => {
   const [text, setText] = useState("");
@@ -9,6 +10,7 @@ const MessageInput = () => {
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const { sendMessage, conversationId } = messageStore();
+  const { selectedGroup, sendGroupMessage } = useGroupStore();
   const { socket, authUser } = useAuthStore();
   const userId = authUser?.userId; // current user ID
 
@@ -39,7 +41,11 @@ const MessageInput = () => {
     emitTyping();
   };
   const handleSubmit = ({ text, imagePreview }) => {
-    sendMessage({ text, image: imagePreview });
+    if (selectedGroup) {
+      sendGroupMessage({ text, image: imagePreview });
+    } else {
+      sendMessage({ text, image: imagePreview });
+    }
     setText("");
     setImagePreview(null);
 

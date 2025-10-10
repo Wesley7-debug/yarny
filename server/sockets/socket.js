@@ -58,16 +58,27 @@ io.on("connection", (socket) => {
 
   // ✅ Typing event
   socket.on("typing", ({ conversationId, userId }) => {
-    console.log(
-      `➡️ Received typing from ${userId} in conversation ${conversationId}`
-    );
     socket.to(conversationId).emit("userTyping", { conversationId, userId });
+  });
+  socket.on("room", (MY_ROOM) => {
+    console.log(`${socket.id} has joined ${MY_ROOM}`);
   });
 
   socket.on("stopTyping", ({ conversationId, userId }) => {
     socket
       .to(conversationId)
       .emit("userStoppedTyping", { conversationId, userId });
+  });
+  socket.on("call-user", ({ userToCall, signal, from, roomId }) => {
+    socket.to(roomId).emit("receive-call", { from, signal });
+  });
+
+  socket.on("answer-call", ({ to, signal }) => {
+    io.to(to).emit("call-accepted", { signal });
+  });
+
+  socket.on("end-call", ({ roomId }) => {
+    socket.to(roomId).emit("end-call");
   });
 
   // ✅ Handle logout

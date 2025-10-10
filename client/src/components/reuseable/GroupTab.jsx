@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import useGroupStore from "../../store/groupStore";
+import ChatSkeleton from "./skeletons/ChatSkeleton";
 
 const GroupTab = () => {
   const {
@@ -21,9 +22,7 @@ const GroupTab = () => {
   };
 
   if (isGettingGroups) {
-    return (
-      <div className="text-center py-4 text-purple-500">Loading groups...</div>
-    );
+    return <ChatSkeleton />;
   }
 
   if (groups.length === 0) {

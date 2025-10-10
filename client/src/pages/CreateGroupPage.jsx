@@ -50,11 +50,14 @@ const CreateGroupPage = () => {
   };
 
   const handleCreate = async () => {
-    await createClientGroup({
+    const newGroup = await createClientGroup({
       name: groupName,
       participants: selectedUsers,
       groupAvatar: groupImageFile,
     });
+    if (newGroup) {
+      navigate("/", { state: { goToChat: true } });
+    }
   };
 
   const handleImageChange = (e) => {

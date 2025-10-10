@@ -68,29 +68,23 @@ const GroupChatHeader = ({ selectedGroup, onClose }) => {
         </button>
 
         {/* Group Avatar */}
-        {selectedGroup.groupAvatar ? (
+        <Link className="flex gap-2" to={`/group-profile/${selectedGroup._id}`}>
           <img
-            src={selectedGroup.groupAvatar || "/Images/avatar.png"}
+            src={selectedGroup.groupAvatar || "/Images/group.png"}
             alt={`${selectedGroup.name} avatar`}
             className="w-10 h-10 rounded-full object-cover"
           />
-        ) : (
-          <div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-bold text-lg uppercase">
-            {selectedGroup.name.charAt(0)}
+          <div>
+            <h2 className="text-lg font-semibold leading-tight">
+              {selectedGroup.name}
+            </h2>
+            <p className="text-xs text-gray-500 truncate max-w-xs">
+              {selectedGroup.participants
+                .map((p) => p.nickname || "Unknown")
+                .join(", ")}
+            </p>
           </div>
-        )}
-
-        {/* Group Info */}
-        <div>
-          <h2 className="text-lg font-semibold leading-tight">
-            {selectedGroup.name}
-          </h2>
-          <p className="text-xs text-gray-500 truncate max-w-xs">
-            {selectedGroup.participants
-              .map((p) => p.username || p.nickname || "Unknown")
-              .join(", ")}
-          </p>
-        </div>
+        </Link>
       </div>
 
       {/* Right Section */}

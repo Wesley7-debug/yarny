@@ -6,107 +6,36 @@ import {
   UserMinus2Icon,
   BellIcon,
   UserPlus,
+  LoaderCircle,
+  Receipt,
+  RefreshCcw,
+  Copy,
+  Loader,
+  UserPlusIcon,
 } from "lucide-react";
+import useGroupStore from "../store/groupStore";
+import useAuthStore from "../store/authStore";
+import { toast } from "react-toastify";
 
 const GroupProfile = () => {
   const navigate = useNavigate();
   const groupInfoRef = useRef(null);
   const [isSticky, setIsSticky] = useState(false);
   const [showAllParticipants, setShowAllParticipants] = useState(false);
+  const {
+    getGroupInfo,
+    groupInfo,
+    deleteGroup,
+    isDeletingGroup,
+    regenerateinvitationLink,
+    isGeneratingInviteLink,
+  } = useGroupStore();
+  const { authUser } = useAuthStore();
 
-  // Dummy group data
-  const group = {
-    name: "Design Team 💡",
-    groupAvatar: "/Images/group-avatar.jpg",
-    participants: [
-      {
-        _id: "1",
-        username: "Alice",
-        email: "alice@example.com",
-        avatarUrl: "/Images/alice.png",
-      },
-      {
-        _id: "2",
-        username: "Bob",
-        email: "bob@example.com",
-        avatarUrl: "/Images/bob.png",
-      },
-      {
-        _id: "3",
-        username: "Charlie",
-        email: "charlie@example.com",
-        avatarUrl: "/Images/charlie.png",
-      },
-      {
-        _id: "4",
-        username: "Diana",
-        email: "diana@example.com",
-        avatarUrl: "/Images/diana.png",
-      },
-      {
-        _id: "5",
-        username: "Eve",
-        email: "eve@example.com",
-        avatarUrl: "/Images/eve.png",
-      },
-      {
-        _id: "6",
-        username: "Frank",
-        email: "frank@example.com",
-        avatarUrl: "/Images/frank.png",
-      },
-      {
-        _id: "7",
-        username: "Grace",
-        email: "grace@example.com",
-        avatarUrl: "/Images/grace.png",
-      },
-      {
-        _id: "8",
-        username: "Hank",
-        email: "hank@example.com",
-        avatarUrl: "/Images/hank.png",
-      },
-      {
-        _id: "9",
-        username: "Ivy",
-        email: "ivy@example.com",
-        avatarUrl: "/Images/ivy.png",
-      },
-      {
-        _id: "10",
-        username: "Jack",
-        email: "jack@example.com",
-        avatarUrl: "/Images/jack.png",
-      },
-      {
-        _id: "11",
-        username: "Kate",
-        email: "kate@example.com",
-        avatarUrl: "/Images/kate.png",
-      },
-      {
-        _id: "12",
-        username: "Leo",
-        email: "leo@example.com",
-        avatarUrl: "/Images/leo.png",
-      },
-      {
-        _id: "13",
-        username: "Mia",
-        email: "mia@example.com",
-        avatarUrl: "/Images/mia.png",
-      },
-      {
-        _id: "14",
-        username: "Nina",
-        email: "nina@example.com",
-        avatarUrl: "/Images/nina.png",
-      },
-    ],
-  };
-
-  // Scroll handler for mobile sticky header group info
+  useEffect(() => {
+    getGroupInfo();
+  }, [getGroupInfo]);
+  // Scroll handler for sticky header on mobile
   useEffect(() => {
     function onScroll() {
       if (window.innerWidth > 768) {
@@ -117,7 +46,7 @@ const GroupProfile = () => {
 
       const groupInfoBottom =
         groupInfoRef.current.getBoundingClientRect().bottom;
-      setIsSticky(groupInfoBottom <= 56); // 56px ~ header height
+      setIsSticky(groupInfoBottom <= 56); // header height approx.
     }
 
     window.addEventListener("scroll", onScroll);
@@ -126,20 +55,35 @@ const GroupProfile = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Dummy leave group handler
+  if (!groupInfo) {
+    return <div>Loading group info...</div>;
+  }
+  console.log("group info", groupInfo);
+  const groupName = groupInfo.name;
+  const groupAvatar = groupInfo.groupAvatar || "/Images/group.png";
+  const groupInviteLink = groupInfo.inviteTokens;
+  console.log("group invite token", groupInviteLink);
+
+  // participants is an array, so map to get usernames or nicknames
+  const groupParticipants = groupInfo.participants || [];
+
+  // Check if current user is admin
+  const isAdmin = groupInfo.admin?.some(
+    (admin) => admin._id === authUser.userId
+  );
+
+  // Participants to show (limit to 5 unless showAllParticipants is true)
+  const participantsToShow = showAllParticipants
+    ? groupParticipants
+    : groupParticipants.slice(0, 5);
+
   const handleLeaveGroup = () => {
     alert("You have left the group.");
   };
 
-  // Add user as private friend handler
   const handleAddFriend = () => {
     alert("Add user as private friend feature coming soon!");
   };
-
-  // Determine participants to show
-  const participantsToShow = showAllParticipants
-    ? group.participants
-    : group.participants.slice(0, 5);
 
   return (
     <div className="w-full h-full bg-white text-black flex flex-col min-h-screen">
@@ -147,7 +91,7 @@ const GroupProfile = () => {
       <header className="flex items-center justify-between p-4 border-b border-gray-200 sticky top-0 bg-white z-30 shadow-sm">
         {/* Back Button */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/", { state: { goToChat: true } })}
           className="text-purple-700 hover:text-purple-800 transition flex items-center gap-1 min-w-[60px]"
           aria-label="Go Back"
         >
@@ -155,7 +99,7 @@ const GroupProfile = () => {
           <span className="font-medium hidden sm:inline">Back</span>
         </button>
 
-        {/* Center Group Info (visible only when sticky on mobile) */}
+        {/* Center Group Info (sticky on mobile) */}
         <div
           className={`flex items-center gap-3 truncate max-w-[60vw] transition-opacity duration-300 ease-in-out
           ${isSticky ? "opacity-100" : "opacity-0 pointer-events-none"}
@@ -163,21 +107,22 @@ const GroupProfile = () => {
           aria-hidden={!isSticky}
         >
           <img
-            src={group.groupAvatar}
+            src={groupAvatar}
             alt="Group Avatar"
             className="w-8 h-8 rounded-full object-cover ring-2 ring-purple-600"
           />
           <div className="truncate text-center leading-tight">
             <h2 className="font-semibold text-purple-700 truncate">
-              {group.name}
+              {groupName}
             </h2>
             <p className="text-xs text-gray-500 truncate">
-              {group.participants.length} participants
+              {groupParticipants.length} participant
+              {groupParticipants.length !== 1 ? "s" : ""}
             </p>
           </div>
         </div>
 
-        {/* More menu button placeholder */}
+        {/* More options */}
         <button
           className="text-gray-700 hover:text-purple-700 transition min-w-[40px] flex justify-end"
           aria-label="More options"
@@ -199,13 +144,14 @@ const GroupProfile = () => {
         aria-hidden={isSticky}
       >
         <img
-          src={group.groupAvatar}
+          src={groupAvatar}
           alt="Group Avatar"
           className="w-24 h-24 rounded-full object-cover ring-2 ring-purple-600"
         />
-        <h2 className="mt-4 text-3xl font-semibold">{group.name}</h2>
+        <h2 className="mt-4 text-3xl font-semibold">{groupName}</h2>
         <p className="text-sm text-gray-500">
-          {group.participants.length} participants
+          {groupParticipants.length} participant
+          {groupParticipants.length !== 1 ? "s" : ""}
         </p>
       </section>
 
@@ -217,13 +163,17 @@ const GroupProfile = () => {
             <li key={user._id} className="flex items-center gap-4 w-full">
               <img
                 src={user.avatarUrl || "/Images/avatar.png"}
-                alt={user.username}
+                alt={user.nickname || "User"}
                 className="w-12 h-12 rounded-full object-cover"
               />
-
               <div>
-                <p className="font-medium text-black">{user.username}</p>
-                <p className="text-sm text-gray-500">{user.email}</p>
+                <p className="font-medium text-black">
+                  {user.nickname || "Unknown"}
+                </p>
+                {/* Optional: show email if available */}
+                {user.email && (
+                  <p className="text-sm text-gray-500">{user.email}</p>
+                )}
               </div>
               <button
                 onClick={handleAddFriend}
@@ -241,19 +191,62 @@ const GroupProfile = () => {
 
           <div className="flex items-center gap-3">
             {/* View All / Show Less toggle */}
-            {group.participants.length > 7 && (
+            {groupParticipants.length > 7 && (
               <button
                 onClick={() => setShowAllParticipants((v) => !v)}
-                className="text-purple-700  text-sm"
+                className="text-purple-700 text-sm"
               >
                 {showAllParticipants ? "show less" : "view all"}
               </button>
             )}
-
-            {/* Add User as Private Friend */}
           </div>
         </h3>
       </section>
+      {/* Group Invite Link (Admin only) */}
+      {isAdmin && groupInviteLink?.length > 0 && (
+        <section className="px-6 pt-4 pb-2 border-t border-gray-200">
+          <h3 className="text-md font-semibold text-gray-700 mb-2">
+            Invite Link
+          </h3>
+          <div className="flex items-center justify-between gap-3 bg-gray-100 rounded-md px-3 py-2">
+            <span className="truncate text-sm text-gray-800 flex-1">
+              {`${window.location.origin}/join-group/${groupInviteLink[0].token}`}
+            </span>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  `${window.location.origin}/join-group/${groupInviteLink[0].token}`,
+                  toast.success("copied to clipboard")
+                );
+              }}
+              title="Copy to clipboard"
+              className="text-purple-700 hover:text-purple-800 transition p-1"
+            >
+              <Copy />
+            </button>
+            {isGeneratingInviteLink ? (
+              <LoaderCircle className="animate-spin text-white w-8 h-8" />
+            ) : (
+              <button
+                onClick={() => {
+                  regenerateinvitationLink();
+                }}
+                title="Regenerate invite link"
+                className="text-purple-700 hover:text-purple-800 transition p-1"
+              >
+                <RefreshCcw />
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Expires:{" "}
+            {new Date(groupInviteLink[0].expiresAt).toLocaleString(undefined, {
+              dateStyle: "medium",
+              timeStyle: "short",
+            })}
+          </p>
+        </section>
+      )}
 
       {/* Actions */}
       <section className="p-6 border-t border-gray-200 space-y-4">
@@ -270,15 +263,27 @@ const GroupProfile = () => {
           Leave Group
         </button>
 
-        {/* Admin-only Delete button placeholder */}
-        <button
-          disabled
-          className="w-full flex items-center justify-center gap-3 text-sm font-semibold text-red-900 bg-red-100 px-4 py-3 rounded opacity-50 cursor-not-allowed"
-          title="Admin only"
-        >
-          <UserMinus2Icon className="w-5 h-5" />
-          Delete Group (Admin)
-        </button>
+        {/* Admin-only Delete button */}
+        {isAdmin && (
+          <>
+            <button
+              onClick={() => deleteGroup(navigate)}
+              className="w-full flex items-center justify-center gap-3 text-sm font-semibold text-blue-900 bg-blue-100 px-4 py-3 rounded hover:bg-red-200 transition"
+              title="Admin only"
+            >
+              <UserPlusIcon className="w-5 h-5" />
+              Add friend
+            </button>
+            <button
+              onClick={() => deleteGroup(navigate)}
+              className="w-full flex items-center justify-center gap-3 text-sm font-semibold text-red-900 bg-red-100 px-4 py-3 rounded hover:bg-red-200 transition"
+              title="Admin only"
+            >
+              <UserMinus2Icon className="w-5 h-5" />
+              Delete Group
+            </button>
+          </>
+        )}
 
         {/* Report group */}
         <button className="w-full flex items-center justify-center gap-3 text-sm font-semibold text-yellow-800 hover:bg-yellow-100 px-4 py-3 rounded transition">
@@ -304,6 +309,11 @@ const GroupProfile = () => {
           Report Group
         </button>
       </section>
+      {isDeletingGroup && (
+        <div className="absolute inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <LoaderCircle className="animate-spin text-white w-8 h-8" />
+        </div>
+      )}
     </div>
   );
 };

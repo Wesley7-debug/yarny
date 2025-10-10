@@ -3,75 +3,89 @@ import ChatActionBar from "../components/reuseable/ChatActionBar";
 import Sidebar from "../components/reuseable/Sidebar";
 import MessageContainer from "../components/reuseable/MessageContainer";
 import NoChatSelected from "../components/reuseable/NoChatSelected";
-import useIsMobile from "../utils/useIsMobile";
+import GroupChatMessgaeContainer from "../components/reuseable/GroupChatMessgaeContainer";
+import MatchingHomeTab from "../components/reuseable/MatchingHomeTab";
 import StatusTab from "../components/reuseable/StatusTab";
 import FriendsTab from "../components/reuseable/FriendsTab";
 import CallTab from "../components/reuseable/CallTab";
-import MatchingHomeTab from "../components/reuseable/MatchingHomeTab";
+import { useLocation } from "react-router-dom";
+import { useEffect } from "react";
+import useIsMobile from "../utils/useIsMobile";
 import messageStore from "../store/messageStore";
 import useGroupStore from "../store/groupStore";
-import GroupChatMessgaeContainer from "../components/reuseable/GroupChatMessgaeContainer";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState("home"); // Default to "home" tab
+  const [activeTab, setActiveTab] = useState("home");
   const isMobile = useIsMobile();
   const { selectedUser } = messageStore();
   const { selectedGroup } = useGroupStore();
+  const location = useLocation();
 
-  // Determine what to render based on active tab
-  const renderContent = () => {
+  // 👇 Set tab based on location state
+  useEffect(() => {
+    if (location.state?.goToChat) {
+      setActiveTab("chats");
+      return;
+    }
+    if (location.state?.goToStatus) {
+      setActiveTab("status");
+    }
+  }, [location.state]);
+
+  const renderChats = () => {
+    if (isMobile) {
+      if (selectedGroup)
+        return <GroupChatMessgaeContainer group={selectedGroup} />;
+      if (selectedUser) return <MessageContainer />;
+      return <Sidebar />;
+    }
+
+    return (
+      <>
+        <Sidebar />
+        {selectedGroup ? (
+          <GroupChatMessgaeContainer group={selectedGroup} />
+        ) : selectedUser ? (
+          <MessageContainer />
+        ) : (
+          <NoChatSelected />
+        )}
+      </>
+    );
+  };
+
+  const renderActiveTab = () => {
     switch (activeTab) {
       case "chats":
-        if (isMobile) {
-          if (selectedGroup)
-            return <GroupChatMessgaeContainer group={selectedGroup} />;
-          if (selectedUser) return <MessageContainer />;
-          return <Sidebar />;
-        } else {
-          return (
-            <>
-              <Sidebar />
-              {selectedGroup ? (
-                <GroupChatMessgaeContainer group={selectedGroup} />
-              ) : selectedUser ? (
-                <MessageContainer />
-              ) : (
-                <NoChatSelected />
-              )}
-            </>
-          );
-        }
-
+        return renderChats();
       case "home":
         return <MatchingHomeTab />;
-
       case "status":
         return <StatusTab />;
-
       case "friends":
         return <FriendsTab />;
-
       case "calls":
         return <CallTab />;
-
       default:
         return null;
     }
   };
 
   return (
-    <div className="h-screen">
-      {!selectedUser && !selectedGroup && (
-        <ChatActionBar activeTab={activeTab} onTabChange={setActiveTab} />
+    <main className="h-screen w-full bg-base-200">
+      {(isMobile ? !selectedUser && !selectedGroup : true) && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 lg:relative lg:z-0">
+          <ChatActionBar activeTab={activeTab} onTabChange={setActiveTab} />
+        </div>
       )}
 
-      <div className="flex items-center justify-center  h-full">
-        <div className="bg-base-100 rounded-lg shadow-cl w-full h-full py-3">
-          <div className="flex h-full rounded-lg lg:ml-13">
-            {renderContent()}
+      <section className="flex items-center justify-center h-screen p-2 lg:p-4 lg:ml-9">
+        <div className="w-full h-screen max-w-[1600px] rounded-xl bg-base-100 shadow-xl overflow-x-hidden overflow-y-auto">
+          <div className="flex h-full flex-col lg:flex-row">
+            {renderActiveTab()}
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

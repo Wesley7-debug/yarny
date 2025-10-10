@@ -1,6 +1,24 @@
 import Status from "../models/Status.js";
 import User from "../models/User.js";
 
+export const getMyStatus = async (req, res) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const statuses = await Status.find({ userId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.status(200).json(statuses);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "Failed to get your statuses", details: error.message });
+  }
+};
 export const getVisibleStatuses = async (req, res) => {
   try {
     const userId = req.user._id; // assuming you're using auth middleware
@@ -18,7 +36,7 @@ export const getVisibleStatuses = async (req, res) => {
       expiresAt: { $gt: now },
     })
       .sort({ createdAt: -1 }) // newest first
-      .populate("userId", "name") // include user info if needed
+      .populate("userId", "nickname") // include user info if needed
       .lean();
 
     res.status(200).json(statuses);
@@ -30,11 +48,11 @@ export const getVisibleStatuses = async (req, res) => {
 };
 
 export const createStatus = async (req, res) => {
+  const userId = req.user?.id || req.user?._id;
   try {
-    const { userId, texts, images, videos } = req.body;
+    const { texts = [], images = [], videos = [], color } = req.body;
 
-    // validate that at least one field is filled
-    if (!texts?.length && !images?.length && !videos?.length) {
+    if (!texts.length && !images.length && !videos.length) {
       return res.status(400).json({
         error: "At least one of texts, images, or videos is required.",
       });
@@ -43,22 +61,27 @@ export const createStatus = async (req, res) => {
     const newStatus = new Status({
       userId,
       texts,
-      images,
-      videos,
+      images, // Expecting [{ url, caption }]
+      videos, // Same
+      color,
     });
 
     await newStatus.save();
     res.status(201).json(newStatus);
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Failed to create status", details: error.message });
+    res.status(500).json({
+      error: "Failed to create status",
+      details: error.message,
+    });
   }
 };
 
 export const deleteStatus = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.body;
+    if (!id) {
+      return res.status(400).json({ error: "Status ID is required" });
+    }
 
     const deleted = await Status.findByIdAndDelete(id);
 

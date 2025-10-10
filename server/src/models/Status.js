@@ -6,44 +6,30 @@ const statusSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
+  texts: [String],
 
-  // Array of text content (optional)
-  texts: [
-    {
-      type: String,
-    },
-  ],
-
-  // Array of image URLs or paths (optional)
   images: [
     {
-      type: String,
+      url: String,
+      caption: String,
     },
   ],
-
-  // Array of video URLs or paths (optional)
   videos: [
     {
-      type: String,
+      url: String,
+      caption: String,
     },
   ],
 
+  color: String,
   createdAt: {
     type: Date,
     default: Date.now,
   },
-  seenBy: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
-  ],
   expiresAt: {
     type: Date,
-    default: function () {
-      return new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours later
-    },
-    index: { expires: 0 }, // TTL index for auto-deletion
+    default: () => new Date(Date.now() + 24 * 60 * 60 * 1000),
+    index: { expires: 0 },
   },
 });
 

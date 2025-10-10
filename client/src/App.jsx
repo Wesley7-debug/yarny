@@ -15,6 +15,7 @@ import messageStore from "./store/messageStore";
 import CreateGroupPage from "./pages/CreateGroupPage";
 import useGroupStore from "./store/groupStore";
 import GroupProfile from "./pages/GroupProfile";
+import MessageContainer from "./components/reuseable/MessageContainer";
 
 const App = () => {
   const { authUser, isAuthenticating, CheckAuth } = authStore();
@@ -59,6 +60,7 @@ const App = () => {
           path="/Login"
           element={!authUser ? <Login /> : <Navigate to="/" />}
         />
+
         <Route
           path="/completeSignup"
           element={authUser ? <CompleteSignup /> : <Navigate to="/" />}
@@ -71,12 +73,13 @@ const App = () => {
           path="/SignUp"
           element={!authUser ? <SignUp /> : <Navigate to="/" />}
         />
+
         <Route
-          path="/friendsProfile"
+          path="/friendsProfile/:id"
           element={authUser ? <FriendsProfile /> : <Navigate to="/Login" />}
         />
         <Route
-          path="/group-profile"
+          path="/group-profile/:id"
           element={authUser ? <GroupProfile /> : <Navigate to="/Login" />}
         />
       </Routes>

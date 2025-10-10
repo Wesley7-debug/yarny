@@ -32,7 +32,7 @@ const Dropdown = ({ trigger, options = [] }) => {
   }, []);
 
   return (
-    <div className="relative inline-block text-left" ref={dropdownRef}>
+    <div className="relative inline-block text-left " ref={dropdownRef}>
       {/* Trigger Element */}
       <div onClick={toggleDropdown} className="cursor-pointer">
         {trigger}
@@ -40,7 +40,7 @@ const Dropdown = ({ trigger, options = [] }) => {
 
       {/* Dropdown Menu */}
       {open && (
-        <div className="absolute right-2 z-10 mt-2 min-w-[180px] rounded-md bg-white shadow-lg ring-1 ring-white/35 ring-opacity-5 text-sm">
+        <div className="absolute right-2 z-100 mt-2 min-w-[180px] rounded-md bg-white shadow-lg ring-1 ring-white/35 ring-opacity-5 text-sm">
           <ul>
             {options.map((opt, idx) => (
               <li

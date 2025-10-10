@@ -97,7 +97,7 @@ const MessageContainer = () => {
   let lastDateLabel = null;
 
   return (
-    <div className="flex-1 flex flex-col h-screen overflow-hidden">
+    <div className="flex-1 flex flex-col h-screen overflow-hidden w-full">
       <ChatHeader />
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {isGettingConversation ? (
@@ -190,11 +190,10 @@ const MessageContainer = () => {
                         </div>
                       )}
 
-                      {msg.text && <p>{msg.text}</p>}
+                      {/* {msg.text && <p>{msg.text}</p>} */}
+                      <p>{msg.text?.trim() || "[empty message]"}</p>
 
-                      <span className="text-[10px] text-gray-500 absolute bottom-1 right-2">
-                        {formattedTime}
-                      </span>
+                      <span className="chat-time">{formattedTime}</span>
                     </div>
                   </div>
                 </div>
@@ -263,7 +262,7 @@ const MessageContainer = () => {
         </div>
       )}
 
-      <div className="sticky bottom-1.5 w-full lg:w-fit">
+      <div className="sticky bottom-1.5 ">
         <MessageInput />
       </div>
     </div>

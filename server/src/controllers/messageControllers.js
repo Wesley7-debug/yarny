@@ -57,11 +57,11 @@ export const sendMessage = async (req, res) => {
     }
 
     // Find the receiver: the other participant in the conversation
-    const receiverId = conversation.participants.find(
+    const receiver = conversation.participants.find(
       (participantId) => participantId.toString() !== senderId.toString()
     );
 
-    if (!receiverId) {
+    if (!receiver) {
       return res
         .status(400)
         .json({ message: "Receiver not found in conversation" });
@@ -80,7 +80,7 @@ export const sendMessage = async (req, res) => {
     const newMessage = new Message({
       conversationId,
       senderId,
-      receiverId, // pass the correct receiver id here
+      receiver, // pass the correct receiver id here
       text,
       image: imageUrl,
     });
