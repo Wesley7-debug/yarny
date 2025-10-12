@@ -18,21 +18,19 @@ import friendsStore from "../../store/friendsStore";
 import { useEffect } from "react";
 import useAuthStore from "../../store/authStore";
 import useTypingStore from "../../store/typingStore";
-import useWebRTC from "../../../hooks/useWebRTC";
 import useCallStore from "../../store/useCallStore";
+import CallScreen from "./CallScreen";
 
 const ChatHeader = () => {
   const { selectedUser, setSelectedUser, conversationId } = messageStore();
-  const { setCalleeUser, setShowCallScreen } = useCallStore();
-  const { callUser } = useWebRTC({
-    roomId: conversationId,
-    user: socket?.id,
-  });
+  const { callUser, setCalleeUser, setShowCallScreen, setCallType } =
+    useCallStore();
 
-  const handleCall = () => {
+  const handleCall = (type = "video") => {
+    setCallType(type);
     setCalleeUser(selectedUser);
     setShowCallScreen(true);
-    callUser(selectedUser._id);
+    callUser();
   };
 
   const { onlineUsersId } = friendsStore();
@@ -122,70 +120,72 @@ const ChatHeader = () => {
   ];
 
   return (
-    <div className="p-2.5 border-b border-base-300 bg-white/35">
-      <div className="flex items-center justify-between">
-        {/* Left Section: Avatar + User Info */}
-        <div className="flex items-center gap-3">
-          {/* Back button */}
-          <button
-            onClick={() => setSelectedUser(null)}
-            aria-label="Close chat"
-            className="ml-2  "
-          >
-            <ArrowLeft className="w-5 h-5 " strokeWidth={4} />
-          </button>
-          {/* Avatar */}
-          <Link
-            to={`/friendsProfile/${selectedUser._id}`}
-            className="avatar rounded-full"
-          >
-            <img
-              src={selectedUser.avatarUrl || "/Images/avatar.png"}
-              alt="User Avatar"
-              className="size-10 rounded-full object-cover"
+    <>
+      <div className="p-2.5 border-b border-base-300 bg-white/35">
+        <div className="flex items-center justify-between">
+          {/* Left Section: Avatar + User Info */}
+          <div className="flex items-center gap-3">
+            {/* Back button */}
+            <button
+              onClick={() => setSelectedUser(null)}
+              aria-label="Close chat"
+              className="ml-2  "
+            >
+              <ArrowLeft className="w-5 h-5 " strokeWidth={4} />
+            </button>
+            {/* Avatar */}
+            <Link
+              to={`/friendsProfile/${selectedUser._id}`}
+              className="avatar rounded-full"
+            >
+              <img
+                src={selectedUser.avatarUrl || "/Images/avatar.png"}
+                alt="User Avatar"
+                className="size-10 rounded-full object-cover"
+              />
+            </Link>
+            {/* User Info */}
+            <div>
+              <h3 className="font-medium">{selectedUser.nickname}</h3>
+              <p className="text-sm text-base-content/70">
+                {typingInfo?.userId === selectedUser._id &&
+                typingInfo?.conversationId === conversationId
+                  ? "typing..."
+                  : onlineUsersId.includes(selectedUser._id)
+                  ? "Online"
+                  : "Offline"}
+              </p>
+            </div>
+          </div>
+
+          {/* Right-side buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              aria-label="Start video chat"
+              className="ml-3"
+              onClick={() => handleCall("video")}
+            >
+              <VideoIcon className="w-5 h-5" />
+            </button>
+            <button
+              aria-label="Start phone call"
+              className="ml-3"
+              onClick={() => handleCall("audio")}
+            >
+              <Phone className="w-[18px] h-[18px]" />
+            </button>
+            <Dropdown
+              trigger={
+                <div className="p-2 rounded-full hover:bg-white/10 transition cursor-pointer">
+                  <EllipsisVertical className="w-5 h-5" />
+                </div>
+              }
+              options={chatHeaderDropdownOptions}
             />
-          </Link>
-          {/* User Info */}
-          <div>
-            <h3 className="font-medium">{selectedUser.nickname}</h3>
-            <p className="text-sm text-base-content/70">
-              {typingInfo?.userId === selectedUser._id &&
-              typingInfo?.conversationId === conversationId
-                ? "typing..."
-                : onlineUsersId.includes(selectedUser._id)
-                ? "Online"
-                : "Offline"}
-            </p>
           </div>
         </div>
-
-        {/* Right-side buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            aria-label="Start video chat"
-            className="ml-3"
-            onClick={() => handleCall()}
-          >
-            <VideoIcon className="w-5 h-5" />
-          </button>
-          <button
-            aria-label="Start phone call"
-            className="ml-3"
-            onClick={() => handleCall({ audioOnly: true })}
-          >
-            <Phone className="w-[18px] h-[18px]" />
-          </button>
-          <Dropdown
-            trigger={
-              <div className="p-2 rounded-full hover:bg-white/10 transition cursor-pointer">
-                <EllipsisVertical className="w-5 h-5" />
-              </div>
-            }
-            options={chatHeaderDropdownOptions}
-          />
-        </div>
       </div>
-    </div>
+    </>
   );
 };
 

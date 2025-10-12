@@ -16,17 +16,33 @@ import CreateGroupPage from "./pages/CreateGroupPage";
 import useGroupStore from "./store/groupStore";
 import GroupProfile from "./pages/GroupProfile";
 import MessageContainer from "./components/reuseable/MessageContainer";
+import { initializeSocket } from "./utils/socket";
+import CallNotification from "./components/reuseable/CallNotification";
+import useCallStore from "./store/useCallStore";
+import CallScreen from "./components/reuseable/CallScreen";
 
 const App = () => {
   const { authUser, isAuthenticating, CheckAuth } = authStore();
   const selectedGroup = useGroupStore((state) => state.selectedGroup);
   const selectedUser = messageStore((state) => state.selectedUser);
+  const { showCallNotification, showCallScreen } = useCallStore();
 
   const location = useLocation();
 
   useEffect(() => {
     CheckAuth();
   }, [CheckAuth]);
+
+  useEffect(() => {
+    if (authUser?.userId) {
+      initializeSocket(authUser.userId);
+    }
+  }, [authUser]);
+
+  useEffect(() => {
+    console.log("🔧 Setting up call socket listeners...");
+    useCallStore.getState().setupSocketListeners();
+  }, []);
 
   if (isAuthenticating) {
     return (
@@ -46,7 +62,7 @@ const App = () => {
     !selectedGroup;
 
   return (
-    <div>
+    <>
       {showNavbar && <Navbar />}
 
       <ToastContainer position="top-right" autoClose={3000} max={3} />
@@ -83,7 +99,9 @@ const App = () => {
           element={authUser ? <GroupProfile /> : <Navigate to="/Login" />}
         />
       </Routes>
-    </div>
+      {showCallNotification && <CallNotification />}
+      {showCallScreen && <CallScreen />}
+    </>
   );
 };
 

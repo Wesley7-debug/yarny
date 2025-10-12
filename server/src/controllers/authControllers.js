@@ -67,7 +67,7 @@ export const SignIn = async (req, res) => {
     }
 
     // Generate JWT token and set cookie
-    await generateToken(existingUser._id, res);
+    generateToken(existingUser, res);
 
     return res
       .status(200)
@@ -94,9 +94,11 @@ export const Checkauth = async (req, res) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    return res
-      .status(200)
-      .json({ message: "User authenticated", userId: decoded.userId });
+    return res.status(200).json({
+      message: "User authenticated",
+      userId: decoded.userId,
+      usernickname: decoded.nickname,
+    });
   } catch (error) {
     return res
       .status(401)

@@ -1,138 +1,123 @@
-// hooks/useWebRTC.js
-import { useEffect, useRef } from "react";
-import SimplePeer from "simple-peer";
+import { useRef, useEffect, useState } from "react";
 import socket from "../src/utils/socket";
 import useCallStore from "../src/store/useCallStore";
+import messageStore from "../src/store/messageStore";
 
-const iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
+const iceServers = {
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+};
 
-const useWebRTC = ({ roomId, user, audioOnly = false }) => {
+const useWebRTC = () => {
   const {
+    peer,
     setPeer,
-    setLocalStream,
-    setRemoteStream,
-    setIsFromMe,
     setCallAccepted,
     setCallEnded,
-    setCaller,
-    setShowCallScreen,
-    peer,
-    localStream,
+    setLocalStream,
+    setRemoteStream,
   } = useCallStore();
+  const { selectedUser } = messageStore();
+  const targetId = selectedUser?._id;
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const [remoteSocketId, setRemoteSocketId] = useState(null);
 
-  // Get user media
+  let pc = peer || new RTCPeerConnection(iceServers);
+
   useEffect(() => {
-    (async () => {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: !audioOnly,
-        audio: true,
-      });
-      setLocalStream(stream);
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
+    setPeer(pc);
+
+    pc.onicecandidate = (e) => {
+      if (e.candidate) {
+        socket.emit("ice-candidate", {
+          to: remoteSocketId,
+          candidate: e.candidate,
+        });
       }
-    })();
-  }, []);
+    };
 
-  // Handle socket listeners
-  useEffect(() => {
-    socket.emit("join-room", { roomId, user });
+    pc.ontrack = (e) => {
+      setRemoteStream(e.streams[0]);
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = e.streams[0];
+      }
+    };
 
-    socket.on("receive-call", ({ from, signal }) => {
-      setCaller(from);
-      setIsFromMe(false);
-      setCallAccepted(false);
-      setShowCallScreen(true);
+    socket.on("receive-call", async ({ from, offer }) => {
+      setRemoteSocketId(from);
+      const stream = await getMedia();
+      addTracksToPeer(stream);
 
-      const answerPeer = new SimplePeer({
-        initiator: false,
-        trickle: false,
-        stream: localStream,
-        config: { iceServers },
-      });
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
 
-      answerPeer.on("signal", (answerSignal) => {
-        socket.emit("answer-call", { to: from, signal: answerSignal });
-      });
-
-      answerPeer.on("stream", (stream) => {
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = stream;
-        }
-        setRemoteStream(stream);
-      });
-
-      answerPeer.signal(signal);
-      setPeer(answerPeer);
-    });
-
-    socket.on("call-accepted", ({ signal }) => {
-      peer?.signal(signal);
+      socket.emit("answer-call", { answer, to: from });
       setCallAccepted(true);
     });
 
-    socket.on("end-call", () => {
-      endCall();
+    socket.on("call-answered", async ({ answer }) => {
+      await pc.setRemoteDescription(new RTCSessionDescription(answer));
+      setCallAccepted(true);
+    });
+
+    socket.on("ice-candidate", async ({ candidate }) => {
+      if (candidate) {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      }
     });
 
     return () => {
       socket.off("receive-call");
-      socket.off("call-accepted");
-      socket.off("end-call");
+      socket.off("call-answered");
+      socket.off("ice-candidate");
     };
-  }, [localStream, peer]);
+  }, [socket]);
 
-  const callUser = (targetId) => {
-    const newPeer = new SimplePeer({
-      initiator: true,
-      trickle: false,
-      stream: localStream,
-      config: { iceServers },
+  const getMedia = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
     });
-
-    newPeer.on("signal", (signalData) => {
-      socket.emit("call-user", {
-        userToCall: targetId,
-        signal: signalData,
-        from: user,
-        roomId,
-      });
-    });
-
-    newPeer.on("stream", (stream) => {
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = stream;
-      }
-      setRemoteStream(stream);
-    });
-
-    setPeer(newPeer);
-    setIsFromMe(true);
-    setShowCallScreen(true);
+    setLocalStream(stream);
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = stream;
+    }
+    return stream;
   };
 
-  const answerCall = () => {
-    setCallAccepted(true);
+  const addTracksToPeer = (stream) => {
+    stream.getTracks().forEach((track) => {
+      pc.addTrack(track, stream);
+    });
+  };
+
+  const callUser = async () => {
+    const stream = await getMedia();
+    addTracksToPeer(stream);
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    socket.emit("call-user", {
+      offer,
+      targetId,
+    });
+
+    setRemoteSocketId(targetId);
   };
 
   const endCall = () => {
+    pc.close();
     setCallEnded(true);
-    setShowCallScreen(false);
-    socket.emit("end-call", { roomId });
-    peer?.destroy();
-    setPeer(null);
-    setRemoteStream(null);
   };
 
   return {
+    callUser,
+    endCall,
     localVideoRef,
     remoteVideoRef,
-    callUser,
-    answerCall,
-    endCall,
   };
 };
 

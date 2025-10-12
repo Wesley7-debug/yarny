@@ -1,4 +1,4 @@
-import { getReceiverSocketId, io } from "../../sockets/socket.js";
+import { getReceiverSocketIds, io } from "../../sockets/socket.js";
 import cloudinary from "../cloudinary/Cloudinary.js";
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
@@ -87,7 +87,7 @@ export const sendMessage = async (req, res) => {
 
     conversation.participants.forEach((participantId) => {
       if (participantId.toString() !== senderId.toString()) {
-        const socketId = getReceiverSocketId(participantId.toString());
+        const socketId = getReceiverSocketIds(participantId.toString());
         if (socketId) {
           io.to(socketId).emit("newMessage", newMessage);
         }
